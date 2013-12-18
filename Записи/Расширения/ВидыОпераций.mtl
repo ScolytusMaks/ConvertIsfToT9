@@ -1,0 +1,6 @@
+extends Бюджет_ЗПиДД.Справочники.ВидыНачислений;
+  struct RefISF array Integer;                          --Виды операций Т6, соответствующие этому виду начисления
+    field CodeISF               : String;               --код ИСФ
+    field MainForUnion          : Logical;              --Признак основы для объединения
+  end;
+end;

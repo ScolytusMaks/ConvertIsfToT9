@@ -1,0 +1,109 @@
+class "";
+
+inclass
+--188.0302.2025800.014.1
+
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func Загружено(locCode:string;var locRecord:ТББ_Базовый.Справочники.РабочиеКБК=nil):logical;
+    if locCode<>nil then
+      with Query.Create([ТББ_Базовый.Справочники.РабочиеКБК]) do
+          Filter        = 'CodeISF="'+locCode+'"';
+          Select;
+          if not (Bof and Eof) then
+            locRecord   = Current as ТББ_Базовый.Справочники.РабочиеКБК;
+            Result      = true;
+          end;
+      end;--with Query
+    end;
+  end;--func Загружено
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func ЗагруженоВсе:logical;
+    var locClassRecord  : Class Record;
+    Result      = true;
+    locClassRecord              = FindClass('ТБ69.ISF_ИСТФИН') as Class Record;
+    if locClassRecord<>nil then
+      with Query.Create([locClassRecord]) do
+        Select;
+        while not Eof do
+           if not Загружено(Current.КОД as string) then
+             Result       = false;
+             Break;
+           end;
+           Next;
+        end;--while not Eof
+      end;--with Query
+    end;
+  end;--func ЗагруженоВсе
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func Выполнение:integer;
+    var locClassRecord  : Class Record;
+    var newRecord       : ТББ_Базовый.Справочники.РабочиеКБК;
+    var l               : integer;
+    var newValueS       : string;
+    locClassRecord              = FindClass('ТБ69.ISF_ИСТФИН') as Class Record;
+    if locClassRecord=nil then
+      Message('Класс ISF_ИСТФИН не найден.');
+    else
+      with Query.Create([locClassRecord]) do
+        Select;
+        while not Eof do
+          if not Загружено(Current.Код as string,newRecord)  then
+            if Length(Current.Код as string)=22 then
+              newRecord                 = ТББ_Базовый.Справочники.РабочиеКБК.Create;
+              newRecord.CodeISF         = Current.Код as string;        --Метка
+              newRecord.ТипКбк          = 'КРБ';                        --В зарплате - всегда расходная статья
+              newRecord.КодУБ           = '01';                         --По умолчанию будем считать, что бюджет - федеральный. Позже можно поправить - теперь не критично.
+              newValueS                 = '';
+              for l = 1..20 do
+                if SubStr(Current.Код as string,l,1)<>'.' then
+                  newValueS             = newValueS+SubStr(Current.Код as string,l,1);
+                end;
+              end;
+              newRecord.Код             = newValueS;
+              newRecord.CodeKey         = 'КРБ.'+newValueS;
+              newRecord.Имя             = Current.НАИМ as string;
+              newRecord.Наим            = Current.НАИМ as string;
+              newRecord.Псевдоним       = Current.НАИМ as string;
+              newRecord.КОСГУ.AddEx.Код = '211';
+              newRecord.КОСГУ.AddEx.Код = '212';
+              newRecord.КОСГУ.AddEx.Код = '213';
+              newRecord.КОСГУ.AddEx.Код = '220';
+              newRecord.КОСГУ.AddEx.Код = '226';
+              newRecord.Post;
+            else
+              Message('Код источника финансирования отличается от стандарного!'+Chr(13)+'Пожалуйста, введите коды БК вручную!');
+              newRecord                 = ТББ_Базовый.Справочники.РабочиеКБК.Create;
+              newRecord.CodeISF         = Current.Код as string;        --Метка
+              newRecord.ТипКбк          = 'КРБ';                        --В зарплате - всегда расходная статья
+              newRecord.КодУБ           = '01';                         --По умолчанию будем считать, что бюджет - федеральный. Позже можно поправить - теперь не критично.
+              newRecord.Имя             = Current.НАИМ as string;
+              newRecord.Наим            = Current.НАИМ as string;
+              newRecord.Псевдоним       = Current.НАИМ as string;
+              newRecord.КОСГУ.AddEx.Код = '211';
+              newRecord.КОСГУ.AddEx.Код = '212';
+              newRecord.КОСГУ.AddEx.Код = '213';
+              newRecord.КОСГУ.AddEx.Код = '220';
+              newRecord.КОСГУ.AddEx.Код = '226';
+              OpenBlankEditor('Справочники.КБК.РедРабочийКБК',newRecord,Window.ModalWindow);
+            end;
+          else --запись есть
+               --действий не будет.
+          end; --тест на выполнение загрузки
+          Next;
+        end;
+      end;--with Query
+    end;
+    if ЗагруженоВсе then
+      Result            = cmOk;
+    end;
+  end;--func Выполнение
+
+
+
+inobject
+
+
+end

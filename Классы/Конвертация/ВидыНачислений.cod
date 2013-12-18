@@ -1,0 +1,58 @@
+class "";
+
+inclass
+
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  --@doc ѕроверка выполнени€ импорта дл€ данной операции, одновременно - вычисление параметров выполненного импорта
+  func »мпортќперации¬ыполнен(локЌаше”чреждение:Ѕазовый.ƒанные.—убъект;лок¬идќперации»—‘:record;var лок¬идќперации:Ѕюджет_«ѕиƒƒ.—правочники.¬идыЌачислений=nil;var локќснова:logical=false):logical;
+    var locCodeIsf      : string;
+    if лок¬идќперации»—‘<>nil then
+      locCodeIsf        = лок¬идќперации»—‘.GetField(' ќƒ') as string;
+      with Query.Create([Ѕюджет_«ѕиƒƒ.—правочники.¬идыЌачислений]) do
+        Filter          = 'Ќаше”чреждение='+Str(локЌаше”чреждение)+' and RefISF.Exists(CodeISF="'+locCodeIsf+'")';
+        Select;
+        if not (Bof and Eof) then
+          лок¬идќперации= Current as Ѕюджет_«ѕиƒƒ.—правочники.¬идыЌачислений;
+          Result        = true;
+        else
+          лок¬идќперации= nil;
+        end;
+        Close;
+        if Result then
+          Filter        = 'Ќаше”чреждение='+Str(локЌаше”чреждение)+' and RefISF.Exists(CodeISF="'+locCodeIsf+'" and MainForUnion)';
+          Select;
+          локќснова     = not (Bof and Eof);
+          Close;
+        else
+          локќснова     = false;
+        end;
+      end;--with Query
+    end;
+  end;--func »мпортќперации¬ыполнен
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func «агружено¬се(локЌаше”чреждение : Ѕазовый.ƒанные.—убъект; од»ст‘ин»сф : string):logical;
+    var locClassRecord  : Class Record;
+    Result              = true;
+    locClassRecord      = FindClass('“Ѕ69.ISF_¬»ƒџ_Ќј„') as Class Record;
+    if locClassRecord<>nil then
+      with Query.Create([locClassRecord]) do
+        Filter          = '»—“‘»Ќ="'+ од»ст‘ин»сф+'"';
+        Select;
+        while not Eof do
+          if not »мпортќперации¬ыполнен(локЌаше”чреждение,Current) then
+            Result       = false;
+            Break;
+          end;
+          Next;
+        end;--while not Eof
+      end;--with Query
+    end;
+  end;--func «агружено¬се
+
+
+inobject
+
+
+end

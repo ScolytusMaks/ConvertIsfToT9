@@ -1,0 +1,23 @@
+class "";
+
+inclass
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func ИсточникиФинансированияИСФ:string[2];  --[[Код,Наим]]
+    var locClassRecord  : Class Record;
+    locClassRecord              = FindClass('ТБ69.ISF_ИСТФИН') as Class Record;
+    if locClassRecord<>nil then
+      with Query.Create([locClassRecord]) do
+        Select;
+        while not Eof do
+          Result[LengthOfArray(Result)+1]       = [Current.Код as string,Current.Наим as string];
+          Next;
+        end;
+      end;
+    end;
+  end;--func ИсточникиФинансированияИСФ
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+
+inobject
+
+end

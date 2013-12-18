@@ -1,0 +1,158 @@
+class "";
+
+import ТББ_Базовый      classes КонстантыРолей;
+import СИС2             classes Функции;
+
+inclass
+
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func ClassRecordISF(ТипРоли:integer): Class Record;
+    if    ТипРоли in [рольВоинскЗвание,рольСпецЗвание] then
+      Result     = FindClass('ТБ69.ISF_ЗВА_СТАВКА') as Class Record;
+    elsif ТипРоли in [рольКвалификация] then
+      Result     = FindClass('ТБ69.ISF_КАТ_СТАВКА') as Class Record;
+    end;
+  end;
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func BaseClassRecordISF(ТипРоли:integer): Class Record;
+    if    ТипРоли in [рольВоинскЗвание,рольСпецЗвание] then
+      Result     = FindClass('ТБ69.ISF_ЗВА') as Class Record;
+    elsif ТипРоли in [рольКвалификация] then
+      Result     = FindClass('ТБ69.ISF_КАТ') as Class Record;
+    end;
+  end;
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc Выполнение(ТипРоли:integer);
+    var СоздаватьТаблицу        : logical;
+    var locClassRecord          : Class Record;
+    var locBaseClassRecord      : Class Record;
+    var локДатаНачала           : Date;
+    var локмДатаИндексации      : Date[];
+    var локТаблицаСтавок        : Гарнец_ПерсоналБазовый.Справочники.СтавкиРолей;
+    var локПозиция              : Гарнец_ПерсоналБазовый.Справочники.СтавкиРолей;
+    var локНастройкаРоли        : variant[];
+    var локСтавка               : numeric;
+    var j                       : integer;
+    var locCodeIsf              : string;
+    var locUKeyIsf              : integer;
+    --Принятие решения о создании таблицы, соответствующей типу роли
+    with Query.Create([Гарнец_ПерсоналБазовый.Справочники.СтавкиРолей]) do
+      Filter            = 'isGroup=-1 and ТипРоли='+Str(ТипРоли);
+      Select;
+      СоздаватьТаблицу  = (Bof and Eof);
+      Close;
+    end;
+    if СоздаватьТаблицу then --доп.проверка на предмет наличия обработанных при импорте записей в справочнике ролей
+      with Query.Create([Базовый.Справочники.РольСубъекта]) do
+        Filter          = 'isGroup=0 and RefISF.Count>0 and ЭтоДолжность='+Str(ТипРоли);
+        Select;
+        СоздаватьТаблицу= not (Bof and Eof);
+      end;
+    end;
+    if СоздаватьТаблицу then
+    --Вычисление даты начала всех ставок
+    locClassRecord              = ClassRecordISF(ТипРоли);
+    locBaseClassRecord          = BaseClassRecordISF(ТипРоли);
+      if locClassRecord<>nil and locBaseClassRecord<>nil then
+        with Query.Create([locClassRecord]) do
+          Order                 = 'Период';
+          Select;
+          if not (Bof and Eof) then
+            локДатаНачала       = Current.Период as date;
+          end;
+          Close;
+        end;
+    --Создание таблицы, соответствующей типу роли
+        локНастройкаРоли                = ТББ_Базовый.Библио.НастройкаРолиПоКонстанте(ТипРоли);
+        локТаблицаСтавок                = Гарнец_ПерсоналБазовый.Справочники.СтавкиРолей.Create;
+        локТаблицаСтавок.Код            = ТББ_Базовый.Нумератор.НовыйКод(локТаблицаСтавок);
+        локТаблицаСтавок.ТипРоли        = ТипРоли;
+        локТаблицаСтавок.Имя            = локНастройкаРоли[4] as string;
+        локТаблицаСтавок.Наим           = локНастройкаРоли[4] as string;
+        локТаблицаСтавок.ДатаНачала     = локДатаНачала;
+        локТаблицаСтавок.isGroup        = true;
+        локТаблицаСтавок.Post;
+    --Создание массива дат индексаций
+        with Query.Create([locClassRecord]) do
+          Order                 = 'Период';
+          Select;
+          while not Eof do
+              AddInArray(локмДатаИндексации,Current.Период,true);
+            Next;
+          end;
+          Close;
+        end;
+    --Создание позиций таблицы
+        with Query.Create([Базовый.Справочники.РольСубъекта]) do
+          Filter                        = 'isGroup=0 and ЭтоДолжность='+Str(ТипРоли);
+          Order                         = 'Код';
+          Select;
+          while not Eof do
+            локПозиция                  = Гарнец_ПерсоналБазовый.Справочники.СтавкиРолей.Create;
+            локПозиция.GroupDoc         = локТаблицаСтавок;
+            локПозиция.Код              = Current.Код as string;
+            локПозиция.ТипРоли          = ТипРоли;
+            локПозиция.Роль             = Current as Базовый.Справочники.РольСубъекта;
+            for j = 1..LengthOfArray(локмДатаИндексации) do
+              --поиск ставки
+              локСтавка                 = 0;
+              if Current.RefISF.Count>0 then
+                locCodeIsf              = Current.RefISF.Items[1].CodeISF as string;
+              else
+                locCodeIsf              = nil;
+              end;
+              if locCodeIsf<>nil then
+                --запрос к основной таблице для вычисления UKey
+                with Query.Create([locBaseClassRecord]) do
+                  Filter                = 'КОД="'+locCodeIsf+'"';
+                  Select;
+                  if not (Bof and Eof) then
+                    locUKeyIsf          = Current.DocId as integer;
+                  else
+                    locUKeyIsf          = nil;
+                  end;
+                  Close;
+                end;
+                --запрос к подтаблице
+                if locUKeyIsf<>nil then
+                  with Query.Create([locClassRecord]) do--поиск ставки
+                    Order               = 'Период';
+                    Filter              = 'Период='+Str(локмДатаИндексации[j])+' and CARDUKEY='+Str(locUKeyIsf);
+                    Select;
+                    if not (Bof and Eof) then   --ВОТ ОНО!!!
+                      локСтавка         = Current.Значение as numeric;
+                    end;
+                    Close;
+                  end;
+                end;
+              end;
+              локПозиция.Ставка[локмДатаИндексации[j]]  = локСтавка;    --Значение д.б.записано при любой ставке, вкл.нулевую
+            end;--for j
+            локПозиция.Post;
+            Next;
+          end;
+          Close;
+        end;
+    --Создание массива дат индексаций
+      end;
+    end;
+  end;--proc Выполнение
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func Загружено(ТипРоли:integer):logical;
+    with Query.Create([Гарнец_ПерсоналБазовый.Справочники.СтавкиРолей]) do
+      Filter            = 'isGroup=-1 and ТипРоли='+Str(ТипРоли);
+      Select;
+      Result            = not (Bof and Eof);
+      Close;
+    end;
+  end;--func Загружено
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+
+
+
+inobject
+
+end

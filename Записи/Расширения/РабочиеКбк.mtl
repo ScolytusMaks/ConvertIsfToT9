@@ -1,0 +1,3 @@
+extends ТББ_Базовый.Справочники.РабочиеКбк;
+  field CodeISF                         : String;--код ИСФ
+end;

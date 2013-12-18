@@ -1,0 +1,106 @@
+class inherited                 ТББ_Базовый.Базовые.БазовыйБланк
+                                "Импорт справочника воинских и спец.званий";
+
+import СИС2             Classes ФункцииДокумента;
+import ТББ_Базовый      Classes Библио;
+import                  Classes Конвертация.Звания;
+
+inclass
+
+inobject public
+
+
+inobject private
+
+  var секцРоли                  : TemplateSection;
+  var ВидРолиИсф                : record[];
+
+  var НомерОсновы               : integer[];
+  var ВидРоли                   : Базовый.Справочники.РольСубъекта[];
+  var ИмпортЗавершен            : logical[];
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc СозданиеСпискаРолей;
+    var locClassRecord  : Class Record;
+    var k               : integer;
+    var локВидРоли      : Базовый.Справочники.РольСубъекта;
+    locClassRecord              = FindClass('ТБ69.ISF_ЗВА') as Class Record;
+    if locClassRecord<>nil then
+      with Query.Create([locClassRecord]) do
+        Order                   = 'КОД';
+        Select;
+        while not Eof do
+          k                     = LengthOfArray(ВидРолиИсф)+1;
+          ВидРолиИсф[k]         = Current as record;
+          локВидРоли            = nil;
+          if ИмпортРолиВыполнен(ВидРолиИсф[k],локВидРоли) then
+            ИмпортЗавершен[k]   = true;
+            ВидРоли[k]          = локВидРоли;
+          end;
+          Next;
+        end;
+      end;
+    end;
+    секцРоли.Count              = k;
+  end;--proc СозданиеСпискаРолей
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc шаблон_ПриОткрытии(Create :Logical);
+    inherited шаблон_ПриОткрытии(Create);
+    СозданиеСпискаРолей;
+  end;--proc шаблон_ПриОткрытии
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+
+  func Поле_ПриВходе(Cell :TemplateCell; Index :Integer;Action :Template.EnterTypes) :Logical;
+    var locRecord               : Базовый.Справочники.РольСубъекта;
+    if    Cell.Contents = 'ВидРоли' then
+      if Action<>Template.Clear then
+        Result                          = (НомерОсновы[index]=0);
+        locRecord                       = ВидРоли[Index];
+        if CmOk=ВыборРоли([4,5],'',locRecord,Window.ModalWindow) then
+          ВидРоли[Index]                = locRecord;
+          НомерОсновы[Index]            =0;
+        end;
+        Return false;
+      end;
+    end;
+  end;--func Поле_ПриВходе
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+
+  proc Поле_ПриРисовании(Cell :TemplateCell; Selected :Logical; var Color :Integer;var FieldColor :Integer; Font :Font);
+    var locIndex        : integer;
+    locIndex            = Cell.Frame as integer;
+    if    Cell.Contents = 'ВидРоли' then
+      if ИмпортЗавершен[locIndex] then
+        inherited ПриРисовании_КакЗапрещенное(Cell,Selected,Color,FieldColor,Font);
+      else
+        inherited ПриРисовании_КакПолеВыбора(Cell,Selected,Color,FieldColor,Font);
+      end;
+    end;
+  end;--proc Поле_ПриРисовании
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc кнОК_ПриНажатии(Sender :Button);
+    var k               : integer;
+    var локВидРоли      : Базовый.Справочники.РольСубъекта;
+    var locRefISF       : Базовый.Справочники.РольСубъекта.RefISF;
+    for k = 1..секцРоли.Count do
+      if    ВидРолиИсф[k]<>nil then
+        локВидРоли                              = ВидРоли[k];
+        if  not ИмпортРолиВыполнен(ВидРолиИсф[k] as record,локВидРоли) then
+          if локВидРоли<>nil then
+            locRefISF                           = локВидРоли.RefISF.AddEx;
+            locRefISF.CodeISF                   = ВидРолиИсф[k].Код as string;
+            locRefISF.RoleOfRole                = ВидРоли[k].ЭтоДолжность;
+            RecordPostIfNeed(ВидРоли[k]);
+            ИмпортЗавершен[k]                   = true;
+          end;
+        end;
+      end;
+      Hint('Выполнение...',k,секцРоли.Count);
+    end;
+    inherited кнОК_ПриНажатии(Sender);
+  end;--proc кнОК_ПриНажатии
+
+
+end

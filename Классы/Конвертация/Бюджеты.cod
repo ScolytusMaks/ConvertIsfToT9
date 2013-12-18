@@ -1,0 +1,110 @@
+--@ClassDoc В "Зарплате" ИСФ понятия бюджета и КБК не разделялись.
+--@ClassDoc В связи с этим при импорте количество бюджетов всегда равно кол-ву КБК
+--@ClassDoc
+class "";
+
+inclass
+--188.0302.2025800.014.1
+
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func Загружено        (локНашеУчреждение      : Базовый.Данные.Субъект;
+                        локРабКбк               : ТББ_Базовый.Справочники.РабочиеКБК;
+                        локВфо                  : integer;
+                        var locRecord           : Бюджет_ЗПиДД.Справочники.ВидыБюджета=nil
+                        ):logical;
+    if локНашеУчреждение<>nil and локРабКбк<>nil and локВфо>0 then
+      if Конвертация.КБК.Загружено(локРабКбк.CodeISF as string) then
+        with Query.Create([Бюджет_ЗПиДД.Справочники.ВидыБюджета]) do
+          Filter        = 'НашеУчреждение='+Str(локНашеУчреждение)+' and КБК='+Str(локРабКбк)+' and КВФО='+Str(локВфо);
+          Select;
+          if not (Bof and Eof) then
+            locRecord   = Current as Бюджет_ЗПиДД.Справочники.ВидыБюджета;
+            Result      = true;
+          end;
+        end;--with Query
+      end;
+    end;
+  end;--func Загружено
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func ЗагруженоВсе(локНашеУчреждение : Базовый.Данные.Субъект):logical;
+    var locClassRecord  : Class Record;
+    var локРабКбк       : ТББ_Базовый.Справочники.РабочиеКБК;
+    var локСтр          : string;
+    var локВфо          : integer;
+    Result      = true;
+    locClassRecord              = FindClass('ТБ69.ISF_ИСТФИН') as Class Record;
+    if locClassRecord<>nil then
+      with Query.Create([locClassRecord]) do
+        Select;
+        while not Eof do
+          if Конвертация.КБК.Загружено(Current.КОД as string,локРабКбк) then
+            локСтр              = SubStr(Current.КОД as string,Length(Current.КОД as string),1);
+            if локСтр in ['1','2','3','4','5','6','7','8'] then
+              локВфо            = Int(локСтр);
+            else
+              локВфо            = 1;
+            end;
+            if not Загружено(локНашеУчреждение,локРабКбк,локВфо) then
+              Result            = false;
+              Break;
+            end;
+          else
+            Result              = false;
+            Break;
+          end;
+          Next;
+        end;--while not Eof
+      end;--with Query
+    end;
+  end;--func ЗагруженоВсе
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func Выполнение(локНашеУчреждение : Базовый.Данные.Субъект):integer;
+    var locClassRecord  : Class Record;
+    var локРабКбк       : ТББ_Базовый.Справочники.РабочиеКБК;
+    var локСтр          : string;
+    var локВфо          : integer;
+    var newRecord       : Бюджет_ЗПиДД.Справочники.ВидыБюджета;
+    locClassRecord              = FindClass('ТБ69.ISF_ИСТФИН') as Class Record;
+    if locClassRecord<>nil then
+      with Query.Create([locClassRecord]) do
+        Select;
+        while not Eof do
+          if Конвертация.КБК.Загружено(Current.Код as string,локРабКбк)  then
+            локСтр              = SubStr(Current.КОД as string,Length(Current.КОД as string),1);
+            if локСтр in ['1','2','3','4','5','6','7','8'] then
+              локВфо            = Int(локСтр);
+            else
+              локВфо            = 1;
+            end;
+            if локНашеУчреждение<>nil and локРабКбк<>nil and локВфо>0 then
+              if not Загружено(локНашеУчреждение,локРабКбк,локВфо) then
+                newRecord               = Бюджет_ЗПиДД.Справочники.ВидыБюджета.Create;
+                newRecord.Код           = ТББ_Базовый.Нумератор.НовыйКод(newRecord);
+                newRecord.Имя           = локРабКбк.Псевдоним;
+                newRecord.Наим          = локРабКбк.Псевдоним;
+                newRecord.НашеУчреждение= локНашеУчреждение;
+                newRecord.КБК           = локРабКбк;
+                newRecord.КВФО          = локВфо;
+                newRecord.СистемаНО     = СИС2.ФункцииДокумента.QueryRecord(Бюджет_ЗПиДД.Справочники.СистемыНалогообложения,'Наим="Общая система налогообложения"') as Бюджет_ЗПиДД.Справочники.СистемыНалогообложения;
+                newRecord.Post;
+              end;
+            end;
+          end;
+          Next;
+        end;
+      end;--with Query
+    end;
+    if ЗагруженоВсе(локНашеУчреждение) then
+      Result            = cmOk;
+    end;
+  end;--func Выполнение
+
+
+
+inobject
+
+
+end
