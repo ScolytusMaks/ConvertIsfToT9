@@ -149,4 +149,55 @@ End;
 
 
 
+
+
+Record ISF_тк ="ISF_тк"("UKEY" :Integer);
+  Field тхмхж :String ="тхмхж";
+  Field тхнр :String ="тхнр";
+  Field хммт :String ="хммт";
+  Field йндцмхт :String ="йндцмхт";
+  Field мот1 :String ="мот1";
+  Field мот2 :String ="мот2";
+  Field мот3 :String ="мот3";
+  Field мот4 :String ="мот4";
+  Field ярпюумнлот :String ="ярпюумнлот";
+  Field онк :String ="онк";
+  Field ярюрся :String ="ярюрся";
+  Field дпнфд :Date ="дпнфд";
+  Field цпюфдюмярбн :String ="цпюфдюмярбн";
+  Field ярюрсяхц :Integer ="ярюрсяхц";
+  Field йндярпфхр :String ="йндярпфхр";
+  Field хмдейяфхр :String ="хмдейяфхр";
+  Field йндпецфхр :String ="йндпецфхр";
+  Field пецхнм :String ="пецхнм";
+  Field пецхнм_янйп :String ="пецхнм_янйп";
+  Field пюинм :String ="пюинм";
+  Field пюинм_янйп :String ="пюинм_янйп";
+  Field пюинм_йнд :String ="пюинм_йнд";
+  Field цнпнд :String ="цнпнд";
+  Field цнпнд_янйп :String ="цнпнд_янйп";
+  Field цнпнд_йнд :String ="цнпнд_йнд";
+  Field мюяосмйр :String ="мюяосмйр";
+  Field мюяосмйр_янйп :String ="мюяосмйр_янйп";
+  Field мюяосмйр_йнд :String ="мюяосмйр_йнд";
+  Field скхжю :String ="скхжю";
+  Field скхжю_янйп :String ="скхжю_янйп";
+  Field скхжю_йнд :String ="скхжю_йнд";
+  Field днл :String ="днл";
+  Field днл_янйп :String ="днл_янйп";
+  Field йнпо :String ="йнпо";
+  Field йбюпр :String ="йбюпр";
+  Field рекетнм :String ="рекетнм";
+  Field хмдейя_тюйр :String ="хмдейя_тюйр";
+  Field юдпея_тюйр :String ="юдпея_тюйр";
+  Field юдпея_ярпсйр :String ="юдпея_ярпсйр";
+  Field нрвхц_отпя :Integer ="нрвхц_отпя";
+  Field нрвхц_отпм :Integer ="нрвхц_отпм";
+  Field нрвхц_нля :Integer ="нрвхц_нля";
+  Field нрвхц_тяя :Integer ="нрвхц_тяя";
+  Field нрвхц_рпюбл :Integer ="нрвхц_рпюбл";
+End;
+
+
+
 end;--External Group "рСПАН аСУЦЮКРЕП 6.9";

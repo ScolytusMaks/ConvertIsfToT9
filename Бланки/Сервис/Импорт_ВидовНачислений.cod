@@ -1,10 +1,11 @@
 class inherited                 “ЅЅ_Ѕазовый.Ѕазовые.ЅазовыйЅланк
                                 "»мпорт видов начислений";
 
-import —»—2             Classes ‘ункцииƒокумента;
+import —»—2             Classes ‘ункции,‘ункцииƒокумента,—троковые‘ункции;
 import                  Classes  онвертаци€.¬идыЌачислений;
 
 inclass
+      “ипЌачислений             : string;
 
 inobject public
 
@@ -31,12 +32,57 @@ inobject private
 
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   proc —оздание—пискаќпераций;
+    var mCodesIF        : string[];--массив кодов начислений »—‘ по текущему источнику ф-€ (дл€ исключени€ повторений с загруженными ранее видами начислений)
     var locClassRecord  : Class Record;
     var k,j             : integer;
     var лок¬идќперации  : Ѕюджет_«ѕиƒƒ.—правочники.¬идыЌачислений;
     var локќснова       : logical;
+    --секц¬идыќпераций.Count      = 0;
+    ¬идќперации»сф              = nil;
+    Ўаблонќперации              = nil;
+    Ќомерќсновы                 = nil;
+    ќснова                      = nil;
+    Ќе»спользуетс€              = nil;
+    Ќаим¬идаќперации            = nil;
+    ¬идќперации                 = nil;
+    »мпорт«авершен              = nil;
     locClassRecord              = FindClass('“Ѕ69.ISF_¬»ƒџ_Ќј„') as Class Record;
     if locClassRecord<>nil then
+      --импортировано ранее
+      with Query.Create([locClassRecord]) do
+        Filter                  = '»—“‘»Ќ="'+ од»ст‘ин»сф+'"';
+        Select;
+        while not Eof do
+          AddInArray(mCodesIF,Current. од);
+          Next;
+        end;
+      end;
+      with Query.Create([Ѕюджет_«ѕиƒƒ.—правочники.¬идыЌачислений]) do
+        Filter          = 'isGroup=0';
+        Filter          = Filter+' and Match(“ип–асчета. од,"'+SubStr(“ипЌачислений,1,1)+'???")';
+        Filter          = Filter+' and Ќаше”чреждение='+Str(«агруженное”чреждение);
+        if mCodesIF<>nil then
+          Filter        = Filter+' and not RefISF.Exists(CodeISF in ['+ћассив—трок¬—троку(mCodesIF,true)+'])';
+        end;
+        Select;
+        while not Eof do
+          k                     = LengthOfArray(¬идќперации»сф)+1;
+          for j = 1..Current.RefISF.Count as integer do
+            if Current.RefISF.Items[j].MainForUnion as logical then
+              ¬идќперации»сф[k] = QueryRecord(locClassRecord,' од="'+Current.RefISF.Items[j].CodeISF as string+'"');
+              Break;
+            end;
+          end;
+          »мпорт«авершен[k]     = true;
+          Ќаим¬идаќперации[k]   = Current.Ќаим as string;
+          ¬идќперации[k]        = Current as Ѕюджет_«ѕиƒƒ.—правочники.¬идыЌачислений;
+          Ўаблонќперации[k]     = Current.“ип–асчета as Ѕюджет_«ѕиƒƒ.—правочники.“ипы–асчетаЌачислений;
+          ќснова[k]             = true;
+          Ќе»спользуетс€[k]     = Current.Ќе»спользуетс€;
+          Next;
+        end;
+      end;--with Query
+      --список по текущему »‘
       with Query.Create([locClassRecord]) do
         Filter                  = '»—“‘»Ќ="'+ од»ст‘ин»сф+'"';
         Order                   = 'ѕ–»ќ–»“≈“';
@@ -50,13 +96,14 @@ inobject private
             ¬идќперации[k]      = лок¬идќперации;
             Ўаблонќперации[k]   = лок¬идќперации.“ип–асчета;
             ќснова[k]           = локќснова ;
+            Ќе»спользуетс€[k]   = лок¬идќперации.Ќе»спользуетс€;
           end;
           Next;
         end;
       end;
     end;
     секц¬идыќпераций.Count      = k;
-    --разноска номеров главных дл€ слои€ни€ видов начислений
+    --разноска номеров главных дл€ сли€ни€ видов начислений
     for k = 1..секц¬идыќпераций.Count do
       if ќснова[k] then
         for j = 1..секц¬идыќпераций.Count do
@@ -108,6 +155,8 @@ inobject private
 
   proc шаблон_ѕриќткрытии(Create :Logical);
     inherited шаблон_ѕриќткрытии(Create);
+    “ипЌачислений       = if(“ипЌачислений=nil,Ѕюджет_«ѕиƒƒ. онстанты.√руппаќпераций«арплата,“ипЌачислений);
+    ќбновить—писокѕол€(Template.CellByField['“ипЌачислений'],Ѕюджет_«ѕиƒƒ. онстанты.√руппыќперацийЌачислений);
     —оздание—пискаќпераций;
   end;--proc шаблон_ѕриќткрытии
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
@@ -125,8 +174,9 @@ inobject private
       if Action<>Template.Clear then
         locRecord                       = Ўаблонќперации[Index];
         UserForm                        = Ѕюджет_«ѕиƒƒ.—правочники.карт“ипы–асчета.Create;
+        UserForm.CardFile.TreeFilter    = 'Match( од,"'+SubStr(“ипЌачислений,1,1)+'???")' ;
         UserForm.CardFile.Records       = [Ѕюджет_«ѕиƒƒ.—правочники.“ипы–асчетаЌачислений];
-        if CmOk=UserForm.ShowEx(locRecord,,Window.ModalWindow) then
+        if CmOk=UserForm.ShowEx(locRecord,'Match( од,"'+SubStr(“ипЌачислений,1,1)+'???")',Window.ModalWindow) then
           Ќаим¬идаќперации[Index]       = ¬идќперации»сф[index].Ќаим as string;
           Ўаблонќперации[Index]         = locRecord;
           Ќомерќсновы[Index]            =0;
@@ -204,7 +254,9 @@ inobject private
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   proc ѕоле_ѕри¬ыходе(Cell :TemplateCell; Index :Integer);
     var k : integer;
-    if    Cell.Contents = 'Ќомерќсновы' then
+    if    Cell.Contents = '“ипЌачислений' then
+      —оздание—пискаќпераций;
+    elsif Cell.Contents = 'Ќомерќсновы' then
       if Ќомерќсновы[index]>0 then
         ќснова[index]                   = false;
         Ќаим¬идаќперации[index]         = nil;
@@ -237,7 +289,7 @@ inobject private
     var лок¬идќперации  : Ѕюджет_«ѕиƒƒ.—правочники.¬идыЌачислений;
     var locRefISF       : Ѕюджет_«ѕиƒƒ.—правочники.¬идыЌачислений.RefISF;
     for k = 1..секц¬идыќпераций.Count do
-      if    Ќомерќсновы[k]=0 and Ўаблонќперации[k]<>nil then
+      if    Ќомерќсновы[k]=0 and Ўаблонќперации[k]<>nil and ¬идќперации»сф[k]<>nil then
         if  not »мпортќперации¬ыполнен(«агруженное”чреждение,¬идќперации»сф[k] as record,лок¬идќперации) then
           лок¬идќперации                        = Ѕюджет_«ѕиƒƒ.Ѕиблио.—оздатьќперациюѕо“ипу(Ўаблонќперации[k]. од,«агруженное”чреждение,false) as Ѕюджет_«ѕиƒƒ.—правочники.¬идыЌачислений;
           лок¬идќперации.»м€                    = Ќаим¬идаќперации[k];
@@ -257,7 +309,7 @@ inobject private
           end;
           RecordPostIfNeed(лок¬идќперации);
         end;
-      elsif Ќомерќсновы[k]>0 and Ўаблонќперации[k]<>nil then
+      elsif Ќомерќсновы[k]>0 and Ўаблонќперации[k]<>nil and ¬идќперации»сф[k]<>nil then
         j                                       = Ќомерќсновы[k];
         if  not »мпортќперации¬ыполнен(«агруженное”чреждение,¬идќперации»сф[j] as record,лок¬идќперации) then       --проверка импорта основы
           --импорт основы
