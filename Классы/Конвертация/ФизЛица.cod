@@ -1,23 +1,47 @@
 class "";
 
+import СИС2             Classes СтроковыеФункции,ФункцииДокумента;
+
 inclass
 --188.0302.2025800.014.1
 
 
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
-  func Загружено(locCode:string;var locRecord:ТББ_Базовый.Справочники.РабочиеКБК=nil):logical;
---    if locCode<>nil then
---      with Query.Create([ТББ_Базовый.Справочники.РабочиеКБК]) do
---          Filter        = 'CodeISF="'+locCode+'"';
---          Select;
---          if not (Bof and Eof) then
---            locRecord   = Current as ТББ_Базовый.Справочники.РабочиеКБК;
---            Result      = true;
---          end;
---      end;--with Query
---    end;
-  end;--func Загружено
-
+  --@doc Распознавание физиков выполняется по двум алгоитмам: с участием даты рождения и без.
+  --@doc В случае, если ДР для поиска не указана, сравнения с нулевым значением не выполняется - идетификация только по ФИО.
+  func ЗагруженоФл(locFm:string;locIm:string;locOt:string;locDr:date;var locRecord:Базовый.Данные.Субъект=nil):logical;
+    var locFilter       : string;
+    if   locDr<>nil then
+      locFilter         = 'ФизическоеЛицо';
+      locFilter         = locFilter+' and ФамилияФизлица="'+locFm+'"';
+      locFilter         = locFilter+' and ИмяФизлица="'+locIm+'"';
+      locFilter         = locFilter+' and ОтчествоФизлица="'+locOt+'"';
+      locFilter         = locFilter+' and ДатаРождения='+Str(locDr);
+      locRecord         = QueryRecord(Базовый.Данные.Субъект,locFilter) as Базовый.Данные.Субъект;
+      Result            = locRecord<>nil;
+    else
+      locFilter         = 'ФизическоеЛицо';
+      locFilter         = locFilter+' and ФамилияФизлица="'+locFm+'"';
+      locFilter         = locFilter+' and ИмяФизлица="'+locIm+'"';
+      locFilter         = locFilter+' and ОтчествоФизлица="'+locOt+'"';
+      locRecord         = QueryRecord(Базовый.Данные.Субъект,locFilter) as Базовый.Данные.Субъект;
+      Result            = locRecord<>nil;
+    end;
+  end;--func ЗагруженоФл
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  --@doc При имопрте адресов в качестве ключа, по которому определяется совпадение адресов, используется
+  --@doc структурированный адрес. В Т9 структурированный адрес как таковой в БД не хранится, есть только его элементы.
+  --@doc Однако есть поле Адрес_Строкой, в котором предполагается хранение естественной формы записи адреса.
+  --@doc При импорте это поле заполняется структурированным адресом и в дальнейшем используется как ключ поиска.
+  --@doc
+  --@doc             (Физлицо;СтрутурированныйАдрес(ключ поиска);ЗаписьАдреса)
+  func ЗагруженАдрес(locSuject:Базовый.Данные.Субъект;locSetStrk:string;var locRecord:Базовый.Справочники.Адрес=nil):logical;
+    var locFilter       : string;
+      locFilter         = 'Субъект='+Str(locSuject);
+      locFilter         = locFilter+' and Адрес_Строкой="'+locSetStrk+'"';
+      locRecord         = QueryRecord(Базовый.Справочники.Адрес,locFilter) as Базовый.Справочники.Адрес;
+      Result            = locRecord<>nil;
+  end;
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   func ЗагруженоВсе:logical;
 --    var locClassRecord  : Class Record;
@@ -39,63 +63,190 @@ inclass
 
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   func Выполнение:integer;
---    var locClassRecord  : Class Record;
---    var newRecord       : ТББ_Базовый.Справочники.РабочиеКБК;
---    var l               : integer;
---    var newValueS       : string;
---    locClassRecord              = FindClass('ТБ69.ISF_ИСТФИН') as Class Record;
---    if locClassRecord=nil then
---      Message('Класс ISF_ИСТФИН не найден.');
---    else
---      with Query.Create([locClassRecord]) do
---        Select;
---        while not Eof do
---          if not Загружено(Current.Код as string,newRecord)  then
---            if Length(Current.Код as string)=22 then
---              newRecord                 = ТББ_Базовый.Справочники.РабочиеКБК.Create;
---              newRecord.CodeISF         = Current.Код as string;        --Метка
---              newRecord.ТипКбк          = 'КРБ';                        --В зарплате - всегда расходная статья
---              newRecord.КодУБ           = '01';                         --По умолчанию будем считать, что бюджет - федеральный. Позже можно поправить - теперь не критично.
---              newValueS                 = '';
---              for l = 1..20 do
---                if SubStr(Current.Код as string,l,1)<>'.' then
---                  newValueS             = newValueS+SubStr(Current.Код as string,l,1);
---                end;
---              end;
---              newRecord.Код             = newValueS;
---              newRecord.CodeKey         = 'КРБ.'+newValueS;
---              newRecord.Имя             = Current.НАИМ as string;
---              newRecord.Наим            = Current.НАИМ as string;
---              newRecord.Псевдоним       = Current.НАИМ as string;
---              newRecord.КОСГУ.AddEx.Код = '211';
---              newRecord.КОСГУ.AddEx.Код = '212';
---              newRecord.КОСГУ.AddEx.Код = '213';
---              newRecord.КОСГУ.AddEx.Код = '220';
---              newRecord.КОСГУ.AddEx.Код = '226';
---              newRecord.Post;
+    var locClassRecord  : Class Record;
+    var locRecordISF    : Record;
+    var locFIO          : string;
+    var locFm           : string;
+    var locIm           : string;
+    var locOt           : string;
+    var locDr           : date;
+    var RecordFL        : Базовый.Данные.Субъект;
+    var locSNILS        : string;
+    var locCountry      : Базовый.Справочники.Место;
+    var locSetStrk      : string;
+    var locDate         : date;
+    var k               : integer;
+    --.............................................................................................
+    proc ПрисвоитьНенулевоеЗначение(locrecord:record;locFieldName:string;locValue:variant);
+      if locValue<>nil then
+        locrecord.SetField(locFieldName,locValue);
+      end;
+    end;--proc ПрисвоитьНенулевоеЗначение
+    proc ЗаписатьСтандартныеТипыАдреса(RecordAdr: Базовый.Справочники.Адрес);
+--      with Query.Create([]) do
+
+--      end;
+
+    end;
+    proc ЗагрузкаАдреса;
+      var RecordAdr     : Базовый.Справочники.Адрес;                      --Значение типа "Базовый.Справочники.Адрес" используется как "Базовый.Данные.Субъект"
+      var RecordElta    : Базовый.Классификаторы.Сокращение;              --
+      if not ЗагруженАдрес(RecordFL,locSetStrk,RecordAdr)  then
+        RecordAdr               = Базовый.Справочники.Адрес.Create;
+        RecordAdr.Субъект       = RecordFL;
+        locDate                 = locRecordISF.UpdateTime as Date;
+        locDate                 = Dat(Day(locDate),Mon(locDate),Year(locDate));
+        RecordAdr.Дата          = locDate;
+        RecordAdr.Адрес_Строкой = locSetStrk;
+        RecordAdr.Индекс        = locRecordISF.ИНДЕКСЖИТ as string;
+        if locRecordISF.КОДСТРЖИТ='643' or locRecordISF.КОДСТРЖИТ='' then
+          locCountry            = QueryRecord(Базовый.Справочники.Место,'КОД="643"') as Базовый.Справочники.Место;
+        else
+          locCountry            = QueryRecord(Базовый.Справочники.Место,'КОД="'+locRecordISF.КОДСТРЖИТ as string+'"') as Базовый.Справочники.Место;
+        end;
+        RecordAdr.Страна                = locCountry;
+        RecordAdr.Регион_Стр            = locRecordISF.РЕГИОН as string;
+        RecordAdr.Регион_Код            = locRecordISF.КОДРЕГЖИТ as string;
+        RecordElta                      = QueryRecord(Базовый.Классификаторы.Сокращение,'КОД="'+locRecordISF.КОДРЕГЖИТ as string        +'" and Уровень=1') as Базовый.Классификаторы.Сокращение;
+        RecordAdr.Регион_Элемент        = RecordElta;
+        RecordAdr.Район                 = locRecordISF.РАЙОН as string;
+        RecordElta                      = QueryRecord(Базовый.Классификаторы.Сокращение,'КОД="'+locRecordISF.РАЙОН_СОКР as string       +'" and Уровень=2') as Базовый.Классификаторы.Сокращение;
+        RecordAdr.Район_Элемент         = RecordElta;
+        RecordAdr.Город                 = locRecordISF.ГОРОД as string;
+        RecordElta                      = QueryRecord(Базовый.Классификаторы.Сокращение,'КОД="'+locRecordISF.ГОРОД_СОКР as string       +'" and Уровень=3') as Базовый.Классификаторы.Сокращение;
+        RecordAdr.Город_Элемент         = RecordElta;
+        RecordAdr.НасПункт              = locRecordISF.НАСПУНКТ as string;
+        RecordElta                      = QueryRecord(Базовый.Классификаторы.Сокращение,'КОД="'+locRecordISF.НАСПУНКТ_СОКР as string    +'" and Уровень=4') as Базовый.Классификаторы.Сокращение;
+        RecordAdr.Пункт_Элемент         = RecordElta;
+        RecordAdr.Улица                 = locRecordISF.УЛИЦА as string;
+        RecordElta                      = QueryRecord(Базовый.Классификаторы.Сокращение,'КОД="'+locRecordISF.УЛИЦА_СОКР as string       +'" and Уровень=5') as Базовый.Классификаторы.Сокращение;
+        RecordAdr.Улица_Элемент         = RecordElta;
+        RecordAdr.Дом                   = locRecordISF.ДОМ as string;
+        RecordElta                      = QueryRecord(Базовый.Классификаторы.Сокращение,'КОД="'+locRecordISF.ДОМ_СОКР as string         +'" and Уровень=6') as Базовый.Классификаторы.Сокращение;
+        RecordAdr.Дом_Элемент           = RecordElta;
+        RecordAdr.Корпус                = locRecordISF.КОРП as string;
+        RecordAdr.Квартира              = locRecordISF.КВАРТ as string;
+        RecordAdr.Телефон               = locRecordISF.ТЕЛЕФОН as string;
+        RecordAdr.Post;
+      else--обновление записи
+        locDate                         = locRecordISF.UpdateTime as Date;
+        locDate                         = Dat(Day(locDate),Mon(locDate),Year(locDate));
+        if locDate>RecordAdr.Дата then
+          RecordAdr.Дата                = locDate;
+        end;
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Индекс'           ,locRecordISF.ИНДЕКСЖИТ as string);
+        locCountry                      = QueryRecord(Базовый.Справочники.Место,'КОД="'+locRecordISF.КОДСТРЖИТ as string+'"') as Базовый.Справочники.Место;
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Страна'           ,locCountry);
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Регион_Стр'       ,locRecordISF.РЕГИОН);
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Регион_Код'       ,locRecordISF.КОДРЕГЖИТ);
+        RecordElta                      = QueryRecord(Базовый.Классификаторы.Сокращение,'КОД="'+locRecordISF.КОДРЕГЖИТ as string        +'" and Уровень=1') as Базовый.Классификаторы.Сокращение;
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Регион_Элемент'   ,RecordElta);
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Район'            ,locRecordISF.РАЙОН);
+        RecordElta                      = QueryRecord(Базовый.Классификаторы.Сокращение,'КОД="'+locRecordISF.РАЙОН_СОКР as string       +'" and Уровень=2') as Базовый.Классификаторы.Сокращение;
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Район_Элемент',RecordElta);
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Город'            ,locRecordISF.ГОРОД);
+        RecordElta                      = QueryRecord(Базовый.Классификаторы.Сокращение,'КОД="'+locRecordISF.ГОРОД_СОКР as string       +'" and Уровень=3') as Базовый.Классификаторы.Сокращение;
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Город_Элемент'    ,RecordElta);
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'НасПункт'         ,locRecordISF.НАСПУНКТ);
+        RecordElta                      = QueryRecord(Базовый.Классификаторы.Сокращение,'КОД="'+locRecordISF.НАСПУНКТ_СОКР as string    +'" and Уровень=4') as Базовый.Классификаторы.Сокращение;
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Пункт_Элемент'    ,RecordElta);
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Улица'            ,locRecordISF.УЛИЦА);
+        RecordElta                      = QueryRecord(Базовый.Классификаторы.Сокращение,'КОД="'+locRecordISF.УЛИЦА_СОКР as string       +'" and Уровень=5') as Базовый.Классификаторы.Сокращение;
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Улица_Элемент'    ,RecordElta);
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Дом'              ,locRecordISF.ДОМ);
+        RecordElta                      = QueryRecord(Базовый.Классификаторы.Сокращение,'КОД="'+locRecordISF.ДОМ_СОКР as string         +'" and Уровень=6') as Базовый.Классификаторы.Сокращение;
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Дом_Элемент'      ,RecordElta);
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Корпус'           ,locRecordISF.КОРП);
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Квартира'         ,locRecordISF.КВАРТ);
+        ПрисвоитьНенулевоеЗначение(RecordAdr,'Телефон'          ,locRecordISF.ТЕЛЕФОН);
+        RecordPostIfNeed(RecordAdr);
+      end;
+    end;--proc ЗагрузкаАдреса
+
+    --.............................................................................................
+
+    locClassRecord              = FindClass('ТБ69.ISF_ФЛ') as Class Record;
+    if locClassRecord=nil then
+      Message('Класс ISF_ФЛ не найден.');
+    else
+      with Query.Create([locClassRecord]) do
+        Select;
+        while not Eof do
+          locRecordISF  = Current as record;
+          locFIO        = Current.ФИОТ as string;
+          locFm         = СБольшойБуквы(Trim(ExtractWord(locFIO,1)));
+          locIm         = СБольшойБуквы(Trim(ExtractWord(locFIO,2)));
+          locOt         = СБольшойБуквы(Trim(ExtractWord(locFIO,3)));
+          locFIO        = locFm+' '+locIm+' '+locOt;
+          locDr         = Current.ДРОЖД as Date;
+          if Current.НПФ1<>nil and Current.НПФ2<>nil and Current.НПФ3<>nil and Current.НПФ4<>nil then
+            locSNILS    = (Current.НПФ1+'-'+Current.НПФ2+'-'+Current.НПФ3+' '+Current.НПФ4) as string;
+          else
+            locSNILS    = nil;
+          end;
+          if not ЗагруженоФл(locFm,locIm,locOt,locDr,RecordFL)  then
+            --создание и заполнение основной записи
+            RecordFL                    = Базовый.Данные.Субъект.Create;
+            RecordFL.ФизическоеЛицо     = true;
+            RecordFL.Код                = ТББ_Базовый.Нумератор.НовыйКод(RecordFL);
+            RecordFL.Имя                = locFIO;
+            RecordFL.Наим               = locFIO;
+            RecordFL.ФамилияФизлица     = locFm;
+            RecordFL.ИмяФизлица         = locIm;
+            RecordFL.ОтчествоФизлица    = locOt;
+            RecordFL.ДатаРождения       = locDr;
+            RecordFL.Пол                = if(Current.Пол='М',1,2);
+            RecordFL.ИНН                = Current.ИННФ as string;
+            RecordFL.КодГНИ             = Current.КОДГНИФ as string;
+            RecordFL.НалоговыйСтатусФл  = 1;
+            RecordFL.НомерПфр           = locSNILS;
+            if Current.ГРАЖДАНСТВО='РОССИЯ' or Current.ГРАЖДАНСТВО='' then
+              locCountry                = QueryRecord(Базовый.Справочники.Место,'КОД="643"') as Базовый.Справочники.Место;
+              RecordFL.НалоговыйСтатусФл= 1;
+            else
+              locCountry                = QueryRecord(Базовый.Справочники.Место,'Имя="'+Current.ГРАЖДАНСТВО as string+'"') as Базовый.Справочники.Место;
+              RecordFL.НалоговыйСтатусФл= 2;
+            end;
+            RecordFL.ГражданствоФл      = locCountry;
+            RecordFL.Post;
+            --загрузка адресной информации
+            locSetStrk                  = Current.АДРЕС_СТРУКТ as string;
+            ЗагрузкаАдреса;
+
+
+          else --запись есть
+            --обновление основной записи
+            ПрисвоитьНенулевоеЗначение(RecordFL,'ФамилияФизлица'        ,locFm);
+            ПрисвоитьНенулевоеЗначение(RecordFL,'ИмяФизлица'            ,locIm);
+            ПрисвоитьНенулевоеЗначение(RecordFL,'ОтчествоФизлица'       ,locOt);
+            ПрисвоитьНенулевоеЗначение(RecordFL,'ДатаРождения'          ,locDr);
+            ПрисвоитьНенулевоеЗначение(RecordFL,'Имя'                   ,locFIO);
+            ПрисвоитьНенулевоеЗначение(RecordFL,'Наим'                  ,locFIO);
+            RecordFL.Пол                = if(Current.Пол='М',1,2);
+            ПрисвоитьНенулевоеЗначение(RecordFL,'ИНН'                   ,Current.ИННФ as string);
+            ПрисвоитьНенулевоеЗначение(RecordFL,'КодГНИ'                ,Current.КОДГНИФ as string);
+            ПрисвоитьНенулевоеЗначение(RecordFL,'НомерПфр'              ,locSNILS);
+--            if Current.ГРАЖДАНСТВО='РОССИЯ' or Current.ГРАЖДАНСТВО='' then
+--              locCountry                = QueryRecord(Базовый.Справочники.Место,'КОД="643"');
+--              RecordFL.НалоговыйСтатусФл= 1;
 --            else
---              Message('Код источника финансирования отличается от стандарного!'+Chr(13)+'Пожалуйста, введите коды БК вручную!');
---              newRecord                 = ТББ_Базовый.Справочники.РабочиеКБК.Create;
---              newRecord.CodeISF         = Current.Код as string;        --Метка
---              newRecord.ТипКбк          = 'КРБ';                        --В зарплате - всегда расходная статья
---              newRecord.КодУБ           = '01';                         --По умолчанию будем считать, что бюджет - федеральный. Позже можно поправить - теперь не критично.
---              newRecord.Имя             = Current.НАИМ as string;
---              newRecord.Наим            = Current.НАИМ as string;
---              newRecord.Псевдоним       = Current.НАИМ as string;
---              newRecord.КОСГУ.AddEx.Код = '211';
---              newRecord.КОСГУ.AddEx.Код = '212';
---              newRecord.КОСГУ.AddEx.Код = '213';
---              newRecord.КОСГУ.AddEx.Код = '220';
---              newRecord.КОСГУ.AddEx.Код = '226';
---              OpenBlankEditor('Справочники.КБК.РедРабочийКБК',newRecord,Window.ModalWindow);
+--              locCountry                = QueryRecord(Базовый.Справочники.Место,'Имя="'+Current.ГРАЖДАНСТВО+'"');
+--              RecordFL.НалоговыйСтатусФл= 2;
 --            end;
---          else --запись есть
---               --действий не будет.
---          end; --тест на выполнение загрузки
---          Next;
---        end;
---      end;--with Query
---    end;
+--            RecordFL.ГражданствоФл      = locCountry;
+            RecordPostIfNeed(RecordFL);
+            --обновление адресной информации
+            locSetStrk                  = Current.АДРЕС_СТРУКТ as string;
+            ЗагрузкаАдреса;
+
+
+          end; --тест на выполнение загрузки
+          k     = k+1;
+          Hint('Выполнение...',k,Count);
+          Next;
+        end;
+      end;--with Query
+    end;
 --    if ЗагруженоВсе then
 --      Result            = cmOk;
 --    end;

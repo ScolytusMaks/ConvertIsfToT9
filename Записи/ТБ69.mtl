@@ -152,6 +152,7 @@ End;
 
 
 Record ISF_ิห ="ISF_ิห"("UKEY" :Integer);
+  Field UpdateTime :Date ="UpdateTime";
   Field ิศอศึ :String ="ิศอศึ";
   Field ิศฮา :String ="ิศฮา";
   Field ศออิ :String ="ศออิ";
