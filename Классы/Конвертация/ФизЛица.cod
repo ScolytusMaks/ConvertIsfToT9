@@ -3,9 +3,20 @@ class "";
 import СИС2             Classes СтроковыеФункции,ФункцииДокумента;
 
 inclass
---188.0302.2025800.014.1
-
-
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  СтандартныеТипыАдреса[]       : Базовый.Справочники.ТипАдреса;
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc ОпределитьСтандартныеТипыАдреса;
+    var k       : integer;
+    with Query.Create([Базовый.Справочники.ТипАдреса]) do
+      Filter            = 'ДляФизлиц and (Код in ["Прописка","Фактический","Почтовый"])';
+      Select;
+      for k = 1..Count do
+        СтандартныеТипыАдреса[k]                = Current as Базовый.Справочники.ТипАдреса;
+        Next;
+      end;
+    end;
+  end;--proc ОпределитьСтандартныеТипыАдреса
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   --@doc Распознавание физиков выполняется по двум алгоитмам: с участием даты рождения и без.
   --@doc В случае, если ДР для поиска не указана, сравнения с нулевым значением не выполняется - идетификация только по ФИО.
@@ -43,6 +54,20 @@ inclass
       Result            = locRecord<>nil;
   end;
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  --@doc При имопрте документов в качестве ключа, по которому определяется совпадение документа, используется
+  --@doc строковая сумма реквизитов документа: КодТипаДокумента,СерияДокумент,НомерДоекмента.
+  --@doc Ключ передается в функцию в виде массива строк.
+  func ЗагруженДокументФл(locSuject:Базовый.Данные.Субъект;locKey:string[];var locRecord:Базовый.Справочники.Удостоверение=nil):logical;
+    var locFilter       : string;
+      locFilter         = 'ФизЛицо='+Str(locSuject);
+      locFilter         = locFilter+' and ВидДокумента.Код="'+locKey[1]+'"';
+      locFilter         = locFilter+' and Серия="'+locKey[2]+'"';
+      locFilter         = locFilter+' and Номер="'+locKey[3]+'"';
+      locRecord         = QueryRecord(Базовый.Справочники.Удостоверение,locFilter) as Базовый.Справочники.Удостоверение;
+      Result            = locRecord<>nil;
+  end;
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   func ЗагруженоВсе:logical;
 --    var locClassRecord  : Class Record;
 --    Result      = true;
@@ -76,20 +101,27 @@ inclass
     var locSetStrk      : string;
     var locDate         : date;
     var k               : integer;
-    --.............................................................................................
+    --Внутренние функции...........................................................................
     proc ПрисвоитьНенулевоеЗначение(locrecord:record;locFieldName:string;locValue:variant);
       if locValue<>nil then
         locrecord.SetField(locFieldName,locValue);
       end;
     end;--proc ПрисвоитьНенулевоеЗначение
     proc ЗаписатьСтандартныеТипыАдреса(RecordAdr: Базовый.Справочники.Адрес);
---      with Query.Create([]) do
-
---      end;
-
-    end;
+      var s                             : integer;
+      var локСтандартныеТипыАдреса      : Базовый.Справочники.ТипАдреса[];
+      for s = 1..RecordAdr.Позиции.Count do
+        локСтандартныеТипыАдреса[s]     = RecordAdr.Позиции[s].ТипАдреса;
+      end;
+      for s = 1..LengthOfArray(СтандартныеТипыАдреса) do
+        if not СтандартныеТипыАдреса[s] in локСтандартныеТипыАдреса then
+          RecordAdr.Позиции.AddEx.ТипАдреса     = СтандартныеТипыАдреса[s];
+        end;
+      end;
+      RecordPostIfNeed(RecordAdr);
+    end;--proc ЗаписатьСтандартныеТипыАдреса
     proc ЗагрузкаАдреса;
-      var RecordAdr     : Базовый.Справочники.Адрес;                      --Значение типа "Базовый.Справочники.Адрес" используется как "Базовый.Данные.Субъект"
+      var RecordAdr     : Базовый.Справочники.Адрес;                      --
       var RecordElta    : Базовый.Классификаторы.Сокращение;              --
       if not ЗагруженАдрес(RecordFL,locSetStrk,RecordAdr)  then
         RecordAdr               = Базовый.Справочники.Адрес.Create;
@@ -128,6 +160,7 @@ inclass
         RecordAdr.Квартира              = locRecordISF.КВАРТ as string;
         RecordAdr.Телефон               = locRecordISF.ТЕЛЕФОН as string;
         RecordAdr.Post;
+        ЗаписатьСтандартныеТипыАдреса(RecordAdr);
       else--обновление записи
         locDate                         = locRecordISF.UpdateTime as Date;
         locDate                         = Dat(Day(locDate),Mon(locDate),Year(locDate));
@@ -159,12 +192,44 @@ inclass
         ПрисвоитьНенулевоеЗначение(RecordAdr,'Корпус'           ,locRecordISF.КОРП);
         ПрисвоитьНенулевоеЗначение(RecordAdr,'Квартира'         ,locRecordISF.КВАРТ);
         ПрисвоитьНенулевоеЗначение(RecordAdr,'Телефон'          ,locRecordISF.ТЕЛЕФОН);
+        ЗаписатьСтандартныеТипыАдреса(RecordAdr);
         RecordPostIfNeed(RecordAdr);
       end;
     end;--proc ЗагрузкаАдреса
-
-    --.............................................................................................
-
+    proc ЗагрузкаДокументовФл(ВнешняяЗаписьФл:integer);           --Документ идентифицируется по строковой сумме полей Код,Серия,Номер.
+      var locKey        : string[];
+      var RecordDoc     : Базовый.Справочники.Удостоверение;
+      var RecordDocType : Базовый.Классификаторы.ВидДокумента;
+      var k             : integer;
+      with Query.Create([FindClass('ТБ69.ISF_СОТР_ДОК') as Class Record]) do
+        Filter          = 'ФЛ='+Str(ВнешняяЗаписьФл);
+        Select;
+        for k = 1..Count do
+          locKey[1]     = Current.GetField('КОДТИПДОК') as string;
+          locKey[2]     = Trim(Current.GetField('СЕР') as string);
+          locKey[3]     = Trim(Current.GetField('НОМ') as string);
+          if not ЗагруженДокументФл(RecordFL,locKey,RecordDoc)  then
+            RecordDoc                   = Базовый.Справочники.Удостоверение.Create;
+            RecordDoc.ФизЛицо           = RecordFL;
+            RecordDoc.ОсновнойДок       = true;
+            RecordDocType               = QueryRecord(Базовый.Классификаторы.ВидДокумента,'КОД="'+locKey[1]+'"') as Базовый.Классификаторы.ВидДокумента;
+            RecordDoc.ВидДокумента      = RecordDocType;
+            RecordDoc.Серия             = Current.GetField('Сер')       as string;
+            RecordDoc.Номер             = Current.GetField('Ном')       as string;
+            RecordDoc.Кем               = Current.GetField('Кем')       as string;
+            RecordDoc.ДатаВыдачи        = Current.GetField('ДАТВЫД')    as date;
+            RecordDoc.Post;
+          else
+            ПрисвоитьНенулевоеЗначение(RecordDoc,'Кем'                  ,Current.GetField('Кем') as string);
+            ПрисвоитьНенулевоеЗначение(RecordDoc,'ДатаВыдачи'           ,Current.GetField('ДАТВЫД') as date);
+            RecordPostIfNeed(RecordDoc);
+          end;
+          Next;
+        end;
+      end;--with Query
+    end;--proc ЗагрузкаДокументовФл
+    --Окончание внутренних функций.................................................................
+    ОпределитьСтандартныеТипыАдреса;
     locClassRecord              = FindClass('ТБ69.ISF_ФЛ') as Class Record;
     if locClassRecord=nil then
       Message('Класс ISF_ФЛ не найден.');
@@ -238,6 +303,7 @@ inclass
             --обновление адресной информации
             locSetStrk                  = Current.АДРЕС_СТРУКТ as string;
             ЗагрузкаАдреса;
+            ЗагрузкаДокументовФл(Current.DocId as integer);
 
 
           end; --тест на выполнение загрузки

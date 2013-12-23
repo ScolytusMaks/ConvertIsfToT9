@@ -59,6 +59,24 @@ Record ISF_мюярпнийх ="ISF_мюярпнийх"("UKEY" :Integer);
   Field йбюпрхпю :String ="йбюпрхпю";
   Field рекетнм :String ="рекетнм";
 End;
+
+Record ISF_ондп ="ISF_ондп"("UKEY" :Integer);
+  Field йнд :String ="йнд";
+  Field мюхл :String ="мюхл";
+  Field йндсв :String ="йндсв";
+  Field REC_асу :String ="REC_асу";
+  Field йнд_асу :String ="йнд_асу";
+  Field хяртхм :String ="хяртхм";
+  Field пюмц :Integer ="пюмц";
+--  Field REC_опхйюг_ьр :String ="REC_опхйюг_ьр";
+--  Field днотхкэрпм_пк :String ="днотхкэрпм_пк";
+--  Field днотхкэрпс_пк :String ="днотхкэрпс_пк";
+--  Field сопюгдмемн :Integer ="сопюгдмемн";
+--  Field йндйюрецнпхх :String ="йндйюрецнпхх";
+End;
+
+
+
 Record ISF_хяртхм ="ISF_хяртхм"("UKEY" :Integer);
   Field йнд :String ="йнд";
   Field мюхл :String ="мюхл";
@@ -197,6 +215,16 @@ Record ISF_тк ="ISF_тк"("UKEY" :Integer);
   Field нрвхц_нля :Integer ="нрвхц_нля";
   Field нрвхц_тяя :Integer ="нрвхц_тяя";
   Field нрвхц_рпюбл :Integer ="нрвхц_рпюбл";
+End;
+
+Record ISF_янрп_днй ="ISF_янрп_днй"("UKEY" :Integer);
+  Field тк :Integer ="тк";
+  --Field янрп :Integer ="янрп";
+  Field дюрбшд :Date ="дюрбшд";
+  Field йндрходнй :String ="йндрходнй";
+  Field яеп :String ="яеп";
+  Field мнл :String ="мнл";
+  Field йел :String ="йел";
 End;
 
 
