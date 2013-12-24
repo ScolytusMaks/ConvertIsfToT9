@@ -1,0 +1,60 @@
+class "";
+
+inclass
+
+  --@doc В отличие от квалификаций справочник должностей изменяется пользователем очень активно и неаккуратно.
+  --@doc В связи с этим принимается, что идентификатор должности - ее название с исправлениями типичных ошибок ввода -
+  --@doc неоправданным переводом части символов в врхний/нижний регистры, ввод лидирующих/замыкающих пробелов, ввод нескольких пробелов между словами.
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  --@doc Проверка выполнения импорта для данной роли, одновременно - вычисление параметров выполненного импорта
+  func ИмпортРолиВыполнен(локВидРолиИСФ:record;var локВидРоли:Базовый.Справочники.РольСубъекта=nil):logical;
+    var locCodeIsf      : string;
+    if локВидРолиИСФ<>nil then
+      locCodeIsf        = локВидРолиИСФ.GetField('КОД') as string;
+      if локВидРоли<>nil then
+        with Query.Create([Базовый.Справочники.РольСубъекта]) do
+          Filter          = 'КОД="'+локВидРоли.Код+'" and RefISF.Exists(CodeISF="'+locCodeIsf+'" and RoleOfRole=1)';
+          Select;
+          if not (Bof and Eof) then
+            Result        = true;
+          end;
+          Close;
+        end;--with Query
+      else --принимающая запись не указана
+        with Query.Create([Базовый.Справочники.РольСубъекта]) do
+          Filter          = 'RefISF.Exists(CodeISF="'+locCodeIsf+'" and RoleOfRole=1)';
+          Select;
+          if not (Bof and Eof) then
+            локВидРоли    = Current as Базовый.Справочники.РольСубъекта;
+            Result        = true;
+          end;
+          Close;
+        end;--with Query
+      end;
+    end;
+  end;--func ИмпортРолиВыполнен
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func ЗагруженоВсе:logical;
+    var locClassRecord  : Class Record;
+    Result              = true;
+    locClassRecord      = FindClass('ТБ69.ISF_ДОЛЖН') as Class Record;
+    if locClassRecord<>nil then
+      with Query.Create([locClassRecord]) do
+        Select;
+        while not Eof do
+          if not ИмпортРолиВыполнен(Current) then
+            Result       = false;
+            Break;
+          end;
+          Next;
+        end;--while not Eof
+      end;--with Query
+    end;
+  end;--func ЗагруженоВсе
+
+
+inobject
+
+
+end

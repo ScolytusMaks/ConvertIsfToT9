@@ -205,7 +205,7 @@ inobject private
       end;
     end;
     --Result = True; -- Разрешаем вывести подсказку
-  end;
+  end;--func Поле_ПриПодсказке
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
 
   func Поле_ПриВыводе(Cell :TemplateCell; Value :Variant;Action :Template.OutputTypes; var Format :String) :Variant;
@@ -223,7 +223,7 @@ inobject private
         Result          = Value;
       end;
     end;
-  end;
+  end;--func Поле_ПриВыводе
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
 
   proc Поле_ПриРисовании(Cell :TemplateCell; Selected :Logical; var Color :Integer;var FieldColor :Integer; Font :Font);
@@ -280,10 +280,8 @@ inobject private
     elsif Cell.Contents='НеИспользуется' then
       Result            = ШаблонОперации[index]<>nil and НаимВидаОперации[index]<>nil;
     end;
-  end;
+  end;--func Поле_ПриПроверке
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
-
-
   proc кнОК_ПриНажатии(Sender :Button);
     var k,j             : integer;
     var локВидОперации  : Бюджет_ЗПиДД.Справочники.ВидыНачислений;
@@ -338,8 +336,7 @@ inobject private
       Hint('Выполнение...',k,секцВидыОпераций.Count);
     end;
     inherited кнОК_ПриНажатии(Sender);
-      
-  end;
+  end;--proc кнОК_ПриНажатии
 
 
 end

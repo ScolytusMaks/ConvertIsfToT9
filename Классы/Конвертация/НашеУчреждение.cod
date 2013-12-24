@@ -17,8 +17,41 @@ inclass
     end;--with Query
   end;--func Загружено
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
-  proc ИмпортПодразделений;
-
+  proc ИмпортПодразделений(locSubject:Базовый.Данные.Субъект);
+    var ЗагрузкаВыполнена       : logical;
+    var locClassRecord          : Class Record;
+    var newRecord               : Базовый.Данные.Субъект;
+    var MainGroup               : Базовый.Данные.Субъект;
+    var k                       : integer;
+    --проверка ранее выполненной загрузки
+    with Query.Create([Базовый.Данные.Субъект]) do
+      Filter                    = 'Подразделение and Субъект='+Str(locSubject);
+      ЗагрузкаВыполнена         = CalcAggregates('Count')>0;
+    end;--with Query
+    --собственно загрузка
+    if not ЗагрузкаВыполнена then
+      locClassRecord            = FindClass('ТБ69.ISF_ПОДР') as Class Record;
+      if locClassRecord<>nil then
+        MainGroup               = ТББ_Базовый.Библио.ГлавнаяГруппаПодразделений(locSubject);
+        with Query.Create([locClassRecord]) do
+          Select;
+          for k = 1..Count do
+            newRecord                   = Базовый.Данные.Субъект.Create;
+            newRecord.Субъект           = locSubject;
+            newRecord.GroupDoc          = MainGroup;
+            newRecord.Подразделение     = true;
+            newRecord.НашеПодразделение = true;
+            newRecord.МестоРаботы       = true;
+            newRecord.Код               = ТББ_Базовый.Нумератор.НовыйКод(newRecord);
+            newRecord.Имя               = Current.НАИМ as string;
+            newRecord.Наим              = Current.НАИМ as string;
+            newRecord.CodeISF           = Current.КОД as string;
+            newRecord.Post;
+            Next;
+          end;--for k
+        end;--with Query
+      end;
+    end;--if not ЗагрузкаВыполнена
   end;--proc ИмпортПодразделений
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   func Выполнение:integer;
@@ -62,6 +95,7 @@ inclass
           newRecord.ОКВЭД               = Current.ОКВЭД as string;
           newRecord.ОГРН                = Current.ОГРН as string;
           СИС2.ФункцииДокумента.RecordPostIfNeed(newRecord);
+          ИмпортПодразделений(newRecord);
           Result                        = cmOk;
         else
           Message('В картотеке ISF_НАСТРОЙКИ не заполнено поле ИНН. Пожалуйста, исправьте!');

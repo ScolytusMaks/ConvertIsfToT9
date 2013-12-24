@@ -1,0 +1,248 @@
+class inherited                 ТББ_Базовый.Базовые.БазовыйБланк
+                                "Импорт справочника должностей";
+
+import СИС2             Classes ФункцииДокумента,СтроковыеФункции;
+import ТББ_Базовый      Classes Библио;
+import                  Classes Конвертация.Должности;
+
+inclass
+
+inobject public
+
+
+inobject private
+
+  var секцРоли                  : TemplateSection;
+  var ВидРолиИсф                : record[];
+
+  var НомерОсновы               : integer[];
+  var НомерВидаРоли             : integer[]=$;
+  var Основа                    : logical[];
+  var НаимВидаРолиПроект        : string[];
+  var НаимВидаРоли              : string[];
+  var ВидРоли                   : Базовый.Справочники.РольСубъекта[];
+  var ИмпортЗавершен            : logical[];
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc СозданиеСпискаРолей;
+    var locClassRecord  : Class Record;
+    var k,t             : integer;
+    var локВидРоли      : Базовый.Справочники.РольСубъекта;
+    var локНаимИсф      : string;
+    var локТекст        : string;
+    ВидРолиИсф                  = nil;
+    НомерОсновы                 = nil;
+    Основа                      = nil;
+    НаимВидаРолиПроект          = nil;
+    НаимВидаРоли                = nil;
+    ВидРоли                     = nil;
+    ИмпортЗавершен              = nil;
+    locClassRecord              = FindClass('ТБ69.ISF_ДОЛЖН') as Class Record;
+    if locClassRecord<>nil then
+      with Query.Create([locClassRecord]) do
+        Filter                  = 'Наим<>nil and Наим<>" "';
+        Order                   = 'Наим';
+        Select;
+        while not Eof do
+          k                     = LengthOfArray(ВидРолиИсф)+1;
+          ВидРолиИсф[k]         = Current as record;
+          локВидРоли            = nil;
+          if ИмпортРолиВыполнен(ВидРолиИсф[k],локВидРоли) then
+            ИмпортЗавершен[k]   = true;
+            ВидРоли[k]          = локВидРоли;
+          else
+            локНаимИсф          = Current.Наим as string;
+            локТекст            = nil;
+            for t = 1..WordsCount(локНаимИсф) do
+              if t=1 then
+                локТекст        = Lo(ExtractWord(локНаимИсф,t));
+                локТекст        = СБольшойБуквы(локТекст);
+              else
+                локТекст        = локТекст+' '+Lo(ExtractWord(локНаимИсф,t));
+              end;
+            end;
+            НаимВидаРолиПроект[k]       = локТекст;
+          end;
+          Next;
+        end;
+      end;
+    end;
+    секцРоли.Count              = k;
+  end;--proc СозданиеСпискаРолей
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc ОбновитьСписокОснов;
+    var locCell         : TemplateCell;
+    var i               : integer;
+    var локВидРоли      : string;
+    locCell             = секцРоли.Cell[4,1];
+    locCell.List.Clear;
+    for i = 1..секцРоли.Count do
+      if Основа[i] then
+        if ВидРоли[i]<>nil then
+          локВидРоли      = ВидРоли[i].Наим;
+        else
+          локВидРоли      = if(НаимВидаРоли[i]<>nil,НаимВидаРоли[i],НаимВидаРолиПроект[i]);
+        end;
+        locCell.List.Add(локВидРоли+'|'+Str(НомерВидаРоли[i]));
+      end;
+    end;
+  end;--proc ОбновитьСписокОснов;
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc шаблон_ПриОткрытии(Create :Logical);
+    inherited шаблон_ПриОткрытии(Create);
+    СозданиеСпискаРолей;
+  end;--proc шаблон_ПриОткрытии
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func Поле_ПриНажатии(Cell :TemplateCell; Action :Template.ClickTypes) :Logical;
+    if    Cell.Contents = 'Основа' then
+      Result    = (НомерОсновы[Cell.Frame]=0);
+    end;
+  end;
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+
+  func Поле_ПриВходе(Cell :TemplateCell; Index :Integer;Action :Template.EnterTypes) :Logical;
+    var locRecord               : Базовый.Справочники.РольСубъекта;
+    if    Cell.Contents = 'НаимВидаРоли' then
+      if Action=Template.Clear and not(ИмпортЗавершен[Index] or НомерОсновы[Index]>0) then
+        Cell.Value              = nil;
+        НаимВидаРоли[Index]     = nil;
+      end;
+      Return not(ИмпортЗавершен[Index] or НомерОсновы[Index]>0);
+    elsif Cell.Contents = 'ВидРоли' then
+      if Action<>Template.Clear then
+        Result                          = (НомерОсновы[index]=0);
+        locRecord                       = ВидРоли[Index];
+        if CmOk=ВыборРоли([1],'',locRecord,Window.ModalWindow) then
+          ВидРоли[Index]                = locRecord;
+          НомерОсновы[Index]            =0;
+        end;
+        Return false;
+      end;
+    elsif Cell.Contents='НомерОсновы' and not ИмпортЗавершен[Index] then
+      if Action<>Template.Clear then
+        ОбновитьСписокОснов;
+        Result    = true;
+      else
+        НомерОсновы[Index]              = 0;
+      end;
+    end;
+  end;--func Поле_ПриВходе
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+
+  func Поле_ПриВыводе(Cell :TemplateCell; Value :Variant;Action :Template.OutputTypes; var Format :String) :Variant;
+    var i       : integer;
+    if    Cell.Contents = 'НаимВидаРоли' then
+      i         = Cell.Frame as integer;
+      if ИмпортЗавершен[i] and ВидРоли[i]<>nil then
+        Result          = ВидРоли[i].Наим;
+      else
+        if НомерОсновы[i]=0 then
+          Result        = if(НаимВидаРоли[i]<>nil,НаимВидаРоли[i],НаимВидаРолиПроект[i]);
+        else
+          Result        = if(НаимВидаРоли[НомерОсновы[i]]<>nil,НаимВидаРоли[НомерОсновы[i]],НаимВидаРолиПроект[НомерОсновы[i]]);
+        end;
+      end;
+    elsif Cell.Contents = 'НомерОсновы' then
+      if Value=0 then
+        Result  = '';
+      else
+        for i = 1..секцРоли.Count do
+          if (Value as integer)=НомерВидаРоли[i] then
+            if ИмпортЗавершен[i] and ВидРоли[i]<>nil then
+              Result    = ВидРоли[i].Наим;
+            else
+              Result    = if(НаимВидаРоли[i]<>nil,НаимВидаРоли[i],НаимВидаРолиПроект[i]);
+            end;
+            Break;
+          end;
+        end;
+        Result          = Value;
+      end;
+    end;
+  end;--func Поле_ПриВыводе
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+
+  proc Поле_ПриРисовании(Cell :TemplateCell; Selected :Logical; var Color :Integer;var FieldColor :Integer; Font :Font);
+    var locIndex        : integer;
+    locIndex            = Cell.Frame as integer;
+    if    Cell.Contents = 'НаимВидаРоли' then
+      if ИмпортЗавершен[locIndex] or НомерОсновы[locIndex]>0 then
+        inherited ПриРисовании_КакЗапрещенное(Cell,Selected,Color,FieldColor,Font);
+      else
+        Font.Italic     = false;
+        inherited ПриРисовании_КакПолеВыбора(Cell,Selected,Color,FieldColor,Font);
+        if НаимВидаРоли[locIndex]=nil then
+          --Font.Color    = СИС2.Константы.clGray;
+          Font.Italic   = true;
+        end;
+      end;
+    end;
+  end;--proc Поле_ПриРисовании
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func Поле_ПриПроверке(Cell :TemplateCell; Index :Integer; var Value :Variant):Logical;
+    if    Cell.Contents='Основа' then
+      Result            = (SearchInArray(НомерОсновы,Index)=-1);
+--      Result            = (SearchInArray(НомерОсновы,Index)=-1) and ШаблонОперации[index]<>nil and НаимВидаОперации[index]<>nil;
+--    elsif Cell.Contents='НеИспользуется' then
+--      Result            = ШаблонОперации[index]<>nil and НаимВидаОперации[index]<>nil;
+    elsif Cell.Contents = 'НаимВидаРоли' then
+      НаимВидаРоли[Index]       = Value as string;
+      Return                    true;
+    end;
+  end;--func Поле_ПриПроверке
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc Поле_ПриВыходе(Cell :TemplateCell; Index :Integer);
+    var k : integer;
+    if    Cell.Contents = 'НомерОсновы' then
+--      if НомерОсновы[index]>0 then
+--        Основа[index]                   = false;
+--        НаимВидаОперации[index]         = nil;
+--        for k = 1..секцВидыОпераций.Count do
+--          if НомерОсновы[index]=НомерВидаОперации[k] then
+--            ШаблонОперации[index]       = ШаблонОперации[k];
+--            Break;
+--          end;
+--        end;
+--      end;
+    elsif Cell.Contents = 'НаимВидаРоли' then
+      if (Cell.Value as string)=НаимВидаРолиПроект[Index] then
+        НаимВидаРоли[Index]             = nil;
+      else
+        НаимВидаРоли[Index]             = Cell.Value as string;
+      end;
+    elsif Cell.Contents = 'Основа' then
+      ОбновитьСписокОснов;
+    elsif Cell.Contents = 'НаимВидаРоли' then
+      ОбновитьСписокОснов;
+    end;
+  end;--proc Поле_ПриВыходе
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc кнОК_ПриНажатии(Sender :Button);
+    var k               : integer;
+    var локВидРоли      : Базовый.Справочники.РольСубъекта;
+    var locRefISF       : Базовый.Справочники.РольСубъекта.RefISF;
+    --for k = 1..секцРоли.Count do
+    for k = 1..1 do
+      if    ВидРолиИсф[k]<>nil then
+        локВидРоли                              = ВидРоли[k];
+        if  not ИмпортРолиВыполнен(ВидРолиИсф[k] as record,локВидРоли) then
+          if локВидРоли<>nil then
+            locRefISF                           = локВидРоли.RefISF.AddEx;
+            locRefISF.CodeISF                   = ВидРолиИсф[k].Код as string;
+            locRefISF.RoleOfRole                = ВидРоли[k].ЭтоДолжность;
+            RecordPostIfNeed(ВидРоли[k]);
+            ИмпортЗавершен[k]                   = true;
+          else
+            --
+          end;
+        end;
+      end;
+      Hint('Выполнение...',k,секцРоли.Count);
+    end;
+    inherited кнОК_ПриНажатии(Sender);
+  end;--proc кнОК_ПриНажатии
+
+
+end

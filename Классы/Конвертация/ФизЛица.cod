@@ -69,21 +69,31 @@ inclass
   end;
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   func ЗагруженоВсе:logical;
---    var locClassRecord  : Class Record;
---    Result      = true;
---    locClassRecord              = FindClass('ТБ69.ISF_ИСТФИН') as Class Record;
---    if locClassRecord<>nil then
---      with Query.Create([locClassRecord]) do
---        Select;
---        while not Eof do
---           if not Загружено(Current.КОД as string) then
---             Result       = false;
---             Break;
---           end;
---           Next;
---        end;--while not Eof
---      end;--with Query
---    end;
+    var locFIO          : string;
+    var locFm           : string;
+    var locIm           : string;
+    var locOt           : string;
+    var locDr           : date;
+    var locClassRecord  : Class Record;
+    Result      = true;
+    locClassRecord              = FindClass('ТБ69.ISF_ФЛ') as Class Record;
+    if locClassRecord<>nil then
+      with Query.Create([locClassRecord]) do
+        Select;
+        while not Eof do
+          locFIO        = Current.ФИОТ as string;
+          locFm         = СБольшойБуквы(Trim(ExtractWord(locFIO,1)));
+          locIm         = СБольшойБуквы(Trim(ExtractWord(locFIO,2)));
+          locOt         = СБольшойБуквы(Trim(ExtractWord(locFIO,3)));
+          locDr         = Current.ДРОЖД as Date;
+          if not ЗагруженоФл(locFm,locIm,locOt,locDr) then
+             Result       = false;
+             Break;
+           end;
+           Next;
+        end;--while not Eof
+      end;--with Query
+    end;
   end;--func ЗагруженоВсе
 
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--

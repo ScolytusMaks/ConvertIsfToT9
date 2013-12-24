@@ -84,6 +84,14 @@ Record ISF_хяртхм ="ISF_хяртхм"("UKEY" :Integer);
   Field йюрецнпхъ_мн :Integer ="йюрецнпхъ_мн";
 End;
 
+Record ISF_днкфм ="ISF_днкфм"("UKEY" :Integer);
+  Field йнд :String ="йнд";
+  Field мюхл :String ="мюхл";
+  Field пюмц :Integer ="пюмц";
+  Field йндсв :String ="йндсв";
+End;
+
+
 Record ISF_гбю ="ISF_гбю"("UKEY" :Integer);
   --Field UKEY :Integer ="UKEY";
   Field йнд :String ="йнд";
