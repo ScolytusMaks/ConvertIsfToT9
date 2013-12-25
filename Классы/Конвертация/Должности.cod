@@ -11,22 +11,22 @@ inclass
     var locCodeIsf      : string;
     if локВидРолиИСФ<>nil then
       locCodeIsf        = локВидРолиИСФ.GetField('КОД') as string;
-      if локВидРоли<>nil then
+      if локВидРоли<>nil then   --принимающая запись указана (след.точно существует), требуется проверка на метку обработки кода
         with Query.Create([Базовый.Справочники.РольСубъекта]) do
-          Filter          = 'КОД="'+локВидРоли.Код+'" and RefISF.Exists(CodeISF="'+locCodeIsf+'" and RoleOfRole=1)';
+          Filter        = 'КОД="'+локВидРоли.Код+'" and RefISF.Exists(CodeISF="'+locCodeIsf+'" and OurINN="'+Переменные.ИНН+'" and RoleOfRole=1)';
           Select;
           if not (Bof and Eof) then
-            Result        = true;
+            Result      = true;
           end;
           Close;
         end;--with Query
-      else --принимающая запись не указана
+      else --принимающая запись не указана, требуется попытка ее поиска
         with Query.Create([Базовый.Справочники.РольСубъекта]) do
-          Filter          = 'RefISF.Exists(CodeISF="'+locCodeIsf+'" and RoleOfRole=1)';
+          Filter        = 'ЭтоДолжность=1 and (RefISF.Exists(CodeISF="'+locCodeIsf+'" and OurINN="'+Переменные.ИНН+'" and RoleOfRole=1))';
           Select;
-          if not (Bof and Eof) then
-            локВидРоли    = Current as Базовый.Справочники.РольСубъекта;
-            Result        = true;
+          if    not(Bof and Eof) then
+            локВидРоли  = Current as Базовый.Справочники.РольСубъекта;
+            Result      = true;
           end;
           Close;
         end;--with Query

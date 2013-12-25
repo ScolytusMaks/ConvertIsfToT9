@@ -2,5 +2,6 @@
 <Properties Version="1"/>
 <Items>
   <Item Name="Библио"/>
+  <Item Name="Переменные"/>
   <Item Name="Конвертация"/>
 </Items>

@@ -1,0 +1,11 @@
+class "";
+
+inclass
+  var ЗагружаемоеУчреждение     : string;
+  var ИНН                       : string;
+  var ЗагруженноеУчреждение     : Базовый.Данные.Субъект;
+
+
+inobject
+
+end

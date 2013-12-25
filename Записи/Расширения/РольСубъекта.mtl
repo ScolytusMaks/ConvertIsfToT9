@@ -1,6 +1,8 @@
 extends Базовый.Справочники.РольСубъекта;
-  struct RefISF array Integer;                          --Виды ролей Т6, соответствующие этому виду начисления
-    field RoleOfRole            : integer;              --Признак основы для объединения
-    field CodeISF               : String;               --код ИСФ
+  struct RefISF array Integer;                                  --Виды ролей Т6, соответствующие этому виду начисления
+    field MainForUnion          : Logical;                      --Признак основы для объединения
+    field RoleOfRole            : integer;                      --Тип роли
+    field CodeISF               : String;                       --код ИСФ
+    field OurINN                : String;                       --импортировано в нашем учреждении (по признаку ИНН)
   end;
 end;
