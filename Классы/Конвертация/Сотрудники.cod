@@ -45,6 +45,52 @@ inclass
       end;
     end;--proc ПериодРаботыЗагружен
     --.............................................................................................
+    func НазначенияЗагружены:logical;
+      var locRecord     : Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение;
+      if RecordSotr<>nil then
+        locRecord       = QueryRecord(Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение,'Сотрудник='+Str(RecordSotr)) as Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение;
+        Result          = locRecord<>nil;
+      end;
+    end;--func НазначенияЗагружены
+    --.............................................................................................
+    func ПоследняяДолжность(локЗаписьСотрИсф:integer;локЗаписьНазначенияИсф:integer):Базовый.Справочники.РольСубъекта;
+      var RecordSotrDlj         : ТБ69.ISF_СОТР_ДОЛЖН;
+      RecordSotrDlj             = QueryRecord(ТБ69.ISF_СОТР_ДОЛЖН,'СОТР='+Str(локЗаписьСотрИсф)+' and ПОДР='+Str(локЗаписьНазначенияИсф),'ДАТН-') as ТБ69.ISF_СОТР_ДОЛЖН;
+      if RecordSotrDlj<>nil then
+        Result                  = ДолжностьПоКодуИсф(RecordSotrDlj.Код);
+      end;
+    end;--func ПоследняяДолжность
+    --.............................................................................................
+    proc ИмпортНазначений(RecordWorkP9  : Гарнец_ПерсоналБазовый.АтрибутыСотрудника.ПериодРаботы);
+      var ClassRecordWorkP6     : Class Record;
+      var RecordWorkN9          : Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение;
+      var locDat                : date;
+      if not НазначенияЗагружены then
+        if ПериодРаботыЗагружен(RecordWorkP9) then
+          ClassRecordWorkP6     = FindClass('ТБ69.ISF_СОТР_ПЕРЕМЕЩ') as Class Record;
+          if ClassRecordWorkP6<>nil then
+            with Query.Create([ClassRecordWorkP6]) do
+              Filter            = 'СОТР='+Str(locRecordISF.DocId);
+              Order             = 'ДАТПЕРН+';
+              Select;
+              while not Eof do
+                RecordWorkN9    = Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение.Create;
+                RecordWorkN9.Сотрудник          = RecordSotr;
+                RecordWorkN9.ПериодРаботы       = RecordWorkP9;
+                RecordWorkN9.Подразделение      = ПодразделениеПоКодуИсф(Current.КОДПОДР as string);
+                RecordWorkN9.Должность          = ПоследняяДолжность(Current.СОТР as integer,Current.DocId as integer);
+                RecordWorkN9.ДатаНачала         = Current.ДатПерН as date;
+                locDat                          = Current.ДатПерК as date;
+                RecordWorkN9.ДатаОкончания      = if(locDat=01.01.9999,nil,locDat);
+                RecordWorkN9.Post;
+                Next;
+              end;
+            end;--with Query
+          end;
+        end;
+      end;
+    end;--proc ИмпортНазначений
+    --.............................................................................................
     proc ИмпортПериодаРаботы;
       var ClassRecordWorkP6     : Class Record;
       var RecordWorkP6          : Record;
@@ -70,46 +116,10 @@ inclass
             end;
           end;
           RecordWorkP9.Post;
+          ИмпортНазначений(RecordWorkP9);
         end;--ClassRecordWorkP6<>nil
       end;
     end;--proc ИмпортПериодаРаботы
-    --.............................................................................................
-    func НазначенияЗагружены:logical;
-      var locRecord     : Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение;
-      if RecordSotr<>nil then
-        locRecord       = QueryRecord(Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение,'Сотрудник='+Str(RecordSotr)) as Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение;
-        Result          = locRecord<>nil;
-      end;
-    end;--proc НазначенияЗагружены
-    --.............................................................................................
-    proc ИмпортНазначений;
-      var ClassRecordWorkP6     : Class Record;
-      var RecordWorkN6          : Record;
-      var RecordWorkP9          : Гарнец_ПерсоналБазовый.АтрибутыСотрудника.ПериодРаботы;
-      var RecordWorkN9          : Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение;
-      var locDat                : date;
-      if not НазначенияЗагружены then
-        if ПериодРаботыЗагружен(RecordWorkP9) then
-          ClassRecordWorkP6     = FindClass('ТБ69.ISF_СОТР_ПЕРЕМЕЩ') as Class Record;
-          if ClassRecordWorkP6<>nil then
-            with Query.Create([ClassRecordWorkP6]) do
-              Filter            = 'СОТР='+Str(locRecordISF.DocId);
-              Order             = 'ДАТПЕРН+';
-              while not Eof do
-                RecordWorkN9    = Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение.Create;
-                RecordWorkN9.Сотрудник          = RecordSotr;
-                RecordWorkN9.ПериодРаботы       = RecordWorkP9;
-                RecordWorkN9.Подразделение      = ПодразделениеПоКодуИсф(Current.КОДПОДР as string);
-                --RecordWorkN9.Должность          = ДолжностьПоКодуИсф(Current.КОДПОДР as string);
-                RecordWorkN9.ДатаНачала         = Current.ДатПерН as date;
-                locDat                          = Current.ДатПерК as date;
-                RecordWorkN9.ДатаОкончания      = if(locDat=01.01.9999,nil,locDat);
-              end;
-            end;--with Query
-          end;
-        end;
-      end;
-    end;--proc ИмпортНазначений
     --Окончание внутренних функций.................................................................
     locClassRecord              = FindClass('ТБ69.ISF_СОТР') as Class Record;
     if locClassRecord=nil then

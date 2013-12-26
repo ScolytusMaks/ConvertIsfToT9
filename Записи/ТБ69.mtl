@@ -347,5 +347,20 @@ Record ISF_янрп_оепелеы ="ISF_янрп_оепелеы"("UKEY" :Integer);
   Field DEL :Integer ="DEL";
 End;
 
+Record ISF_янрп_днкфм ="ISF_янрп_днкфм"("UKEY" :Integer);
+--  Field CreateTime :Date ="CreateTime";
+--  Field UpdateTime :Date ="UpdateTime";
+  Field янрп :Integer ="янрп";
+  Field ондп :Integer ="ондп";
+  Field дюрм :Date ="дюрм";
+  Field дюрй :Date ="дюрй";
+  Field йнд :String ="йнд";
+  Field мюхл :String ="мюхл";
+  Field мюв :Integer ="мюв";
+  Field опхйюг :String ="опхйюг";
+  Field йндьр :String ="йндьр";
+  Field йнкярюбнйг :Real ="йнкярюбнйг";
+End;
+
 
 end;--External Group "рСПАН аСУЦЮКРЕП 6.9";

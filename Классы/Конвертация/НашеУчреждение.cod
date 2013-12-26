@@ -38,6 +38,7 @@ inclass
           for k = 1..Count do
             newRecord                   = Базовый.Данные.Субъект.Create;
             newRecord.Субъект           = locSubject;
+            newRecord.НашеУчреждение    = locSubject;
             newRecord.GroupDoc          = MainGroup;
             newRecord.Подразделение     = true;
             newRecord.НашеПодразделение = true;
