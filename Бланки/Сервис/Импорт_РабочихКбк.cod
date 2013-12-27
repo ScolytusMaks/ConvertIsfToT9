@@ -1,0 +1,118 @@
+class inherited                 ТББ_Базовый.Базовые.БазовыйБланк
+                                "Импорт рабочих кбк";
+
+import СИС2             Classes Функции,ФункцииДокумента;
+--import ТББ_Базовый      Classes Библио;
+import                  Classes Конвертация.Календари;
+
+inclass
+
+inobject public
+
+
+inobject private
+
+  var секцИстФин                : TemplateSection;
+  var ИФ                        : ТБ69.ISF_ИСТФИН[];
+  var КБК                       : ТББ_Базовый.Справочники.РабочиеКБК[];
+  var ИмпортЗавершен            : logical[];
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc СозданиеСписка;
+--    var k               : integer;
+--    func НаимКалендаряИсф(локКод:string):string;
+--      var locRecord     : ТБ69.ISF_КАЛЕНДАРЬ;
+--      locRecord         = QueryRecord(ТБ69.ISF_КАЛЕНДАРЬ,'Код="'+локКод+'"') as ТБ69.ISF_КАЛЕНДАРЬ;
+--      Result            = if(locRecord<>nil,locRecord.Наим,nil);
+--    end;--func НаимКалендаряИсф
+    ИФ                  = nil;
+    КБК                 = nil;
+    ИмпортЗавершен      = nil;
+    with Query.Create([ТБ69.ISF_ИСТФИН]) do
+      Select;
+      while not Eof do
+        AddInArray(ИФ,Current);
+        Next;
+      end;
+    end;--with Query
+--    for k = 1..LengthOfArray(ТкИсф_Код) do
+--      ТкИсф_Наим[k]             = НаимКалендаряИсф(ТкИсф_Код[k]);
+--      ИмпортЗавершен[k]         = ИмпортКалендаряВыполнен(ТкИсф_Код[k],ТкРаб[k]);
+--    end;
+    секцИстФин.Count     = LengthOfArray(ИФ);
+  end;--proc СозданиеСписка
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc шаблон_ПриОткрытии(Create :Logical);
+    inherited шаблон_ПриОткрытии(Create);
+    СозданиеСписка;
+  end;--proc шаблон_ПриОткрытии
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+
+  func Поле_ПриВходе(Cell :TemplateCell; Index :Integer;Action :Template.EnterTypes) :Logical;
+----    var locRecord               : Базовый.Справочники.РольСубъекта;
+--    if    Cell.Contents = 'ТкРаб' then
+--      Result            = not ИмпортЗавершен[Index];
+----      if Action<>Template.Clear then
+----        Result                          = (НомерОсновы[index]=0);
+----        locRecord                       = ВидРоли[Index];
+----        if CmOk=ВыборРоли([4,5],'',locRecord,Window.ModalWindow) then
+----          ВидРоли[Index]                = locRecord;
+----          НомерОсновы[Index]            =0;
+----        end;
+----        Return false;
+----      end;
+--    end;
+  end;--func Поле_ПриВходе
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+
+  proc Поле_ПриРисовании(Cell :TemplateCell; Selected :Logical; var Color :Integer;var FieldColor :Integer; Font :Font);
+--    var locIndex        : integer;
+--    locIndex            = Cell.Frame as integer;
+--    if    Cell.Contents = 'ТкРаб' then
+--      if ИмпортЗавершен[locIndex] or ТкИсф_Код[locIndex]='ДЕТИ' then
+--        inherited ПриРисовании_КакЗапрещенное(Cell,Selected,Color,FieldColor,Font);
+--      else
+--        inherited ПриРисовании_КакПолеВыбора(Cell,Selected,Color,FieldColor,Font);
+--      end;
+--    end;
+  end;--proc Поле_ПриРисовании
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func Поле_ПриВыводе(Cell :TemplateCell; Value :Variant;Action :Template.OutputTypes; var Format :String) :Variant;
+--    var locIndex        : integer;
+--    locIndex            = Cell.Frame as integer;
+--    if    Cell.Contents = 'ТкРаб' then
+--      if ТкИсф_Код[locIndex]='ДЕТИ' then
+--        Return          'Этот тип календаря импорту не подлежит';
+--      else
+--        Return          if(ТкРаб[locIndex]<>nil,ТкРаб[locIndex].Наим,nil);
+--      end;
+--    end;
+  end;--func Поле_ПриВыводе
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc кнОК_ПриНажатии(Sender :Button);
+--    var k               : integer;
+--    var локТипКалендаря : СИС2.ПользовательскийКалендарь.ТипКалендаря;
+--    var locRefISF       : СИС2.ПользовательскийКалендарь.ТипКалендаря.RefISF;
+--    for k = 1..секцТипыКалендаря.Count do
+--      if    ТкИсф_Код[k]<>nil and ТкРаб[k]<>nil then
+--        локТипКалендаря         = ТкРаб[k];
+--        if  not ИмпортКалендаряВыполнен(ТкИсф_Код[k],локТипКалендаря) then
+--          if локТипКалендаря<>nil then
+--            ТкРаб[k]            = локТипКалендаря;
+--            locRefISF           = локТипКалендаря.RefISF.AddEx;
+--            locRefISF.CodeISF   = ТкИсф_Код[k];
+--            locRefISF.OurINN    = Переменные.ИНН;
+--            RecordPostIfNeed(локТипКалендаря);
+--            ИмпортЗавершен[k]   = true;
+--          end;
+--        end;
+--      end;
+--      Hint('Импорт производственных календарей...',k,секцТипыКалендаря.Count);
+--    end;
+    inherited кнОК_ПриНажатии(Sender);
+  end;--proc кнОК_ПриНажатии
+
+
+
+end

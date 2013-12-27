@@ -10,5 +10,6 @@
     <Group Name="Бланки" Type="Blanks" Disabled="False"/>
     <Group Name="Картотеки" Type="Cards" Disabled="False"/>
     <Group Name="Приложения" Type="Other" Disabled="False"/>
+    <Group Name="Помощь" Type="Helps" Disabled="False"/>
   </Groups>
 </Project>

@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="windows-1251"?>
 <Properties Version="1"/>
 <Items>
-  <Item Name="КонвертерИзТБ"/>
   <Item Name="Импорт_Календарей"/>
+  <Item Name="Импорт_РабочихКбк"/>
   <Item Name="Импорт_Званий"/>
   <Item Name="Импорт_ВидовНачислений"/>
   <Item Name="Импорт_Квалификаций"/>

@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="windows-1251"?>
+<Properties Version="1">
+  <Property Name="Title" Value="Конвертер из п/с &quot;Зарплата-универсал&quot; (ИСФ) "/>
+</Properties>
+<Items>
+  <Item Name="НазначениеПроекта.htm"/>
+  <Item Name="Этапы"/>
+  <Item Name="Прикладной функционал"/>
+  <Item Name="СлужебныеДиалоги"/>
+  <Item Name="СписокСотрудников.htm"/>
+  <Item Name="ШтатноеРасписание.htm"/>
+  <Item Name="ТарифныеРазряды.htm"/>
+  <Item Name="СтавкиРолей.htm"/>
+</Items>
