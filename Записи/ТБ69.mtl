@@ -60,6 +60,18 @@ Record ISF_мюярпнийх ="ISF_мюярпнийх"("UKEY" :Integer);
   Field рекетнм :String ="рекетнм";
 End;
 
+Record ISF_йюкемдюпэ ="ISF_йюкемдюпэ"("UKEY" :Integer);
+--  Field CreateTime :Date ="CreateTime";
+--  Field UpdateTime :Date ="UpdateTime";
+  Field цнд :Integer ="цнд";
+  Field йнд :String ="йнд";
+  Field мюхл :String ="мюхл";
+  Field мнлепйндю :Integer ="мнлепйндю";
+  Field йндпюадм :String ="йндпюадм";
+  Field опндпюа :Real ="опндпюа";
+  Field опндпюаоо :Real ="опндпюаоо";
+End;
+
 Record ISF_ондп ="ISF_ондп"("UKEY" :Integer);
   Field йнд :String ="йнд";
   Field мюхл :String ="мюхл";
