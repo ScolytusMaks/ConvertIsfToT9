@@ -3,7 +3,7 @@ class inherited                 ТББ_Базовый.Базовые.БазовыйБланк
 
 import СИС2             Classes Функции,ФункцииДокумента;
 --import ТББ_Базовый      Classes Библио;
---import                  Classes Конвертация.Звания;
+import                  Classes Конвертация.Календари;
 
 inclass
 
@@ -30,6 +30,8 @@ inobject private
     end;--func НаимКалендаряИсф
     ТкИсф_Код           = nil;
     ТкИсф_Наим          = nil;
+    ТкРаб               = nil;
+    ИмпортЗавершен      = nil;
     with Query.Create([ТБ69.ISF_КАЛЕНДАРЬ]) do
       Select;
       while not Eof do
@@ -38,7 +40,8 @@ inobject private
       end;
     end;--with Query
     for k = 1..LengthOfArray(ТкИсф_Код) do
-      ТкИсф_Наим[k]     = НаимКалендаряИсф(ТкИсф_Код[k]);
+      ТкИсф_Наим[k]             = НаимКалендаряИсф(ТкИсф_Код[k]);
+      ИмпортЗавершен[k]         = ИмпортКалендаряВыполнен(ТкИсф_Код[k],ТкРаб[k]);
     end;
     секцТипыКалендаря.Count     = LengthOfArray(ТкИсф_Код);
   end;--proc СозданиеСпискаТиповКалендарей
@@ -51,7 +54,8 @@ inobject private
 
   func Поле_ПриВходе(Cell :TemplateCell; Index :Integer;Action :Template.EnterTypes) :Logical;
 --    var locRecord               : Базовый.Справочники.РольСубъекта;
---    if    Cell.Contents = 'ВидРоли' then
+    if    Cell.Contents = 'ТкРаб' then
+      Result            = not ИмпортЗавершен[Index];
 --      if Action<>Template.Clear then
 --        Result                          = (НомерОсновы[index]=0);
 --        locRecord                       = ВидРоли[Index];
@@ -61,7 +65,7 @@ inobject private
 --        end;
 --        Return false;
 --      end;
---    end;
+    end;
   end;--func Поле_ПриВходе
 
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
@@ -91,24 +95,25 @@ inobject private
   end;--func Поле_ПриВыводе
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   proc кнОК_ПриНажатии(Sender :Button);
---    var k               : integer;
---    var локВидРоли      : Базовый.Справочники.РольСубъекта;
---    var locRefISF       : Базовый.Справочники.РольСубъекта.RefISF;
---    for k = 1..секцРоли.Count do
---      if    ВидРолиИсф[k]<>nil then
---        локВидРоли                              = ВидРоли[k];
---        if  not ИмпортРолиВыполнен(ВидРолиИсф[k] as record,локВидРоли) then
---          if локВидРоли<>nil then
---            locRefISF                           = локВидРоли.RefISF.AddEx;
---            locRefISF.CodeISF                   = ВидРолиИсф[k].Код as string;
---            locRefISF.RoleOfRole                = ВидРоли[k].ЭтоДолжность;
---            RecordPostIfNeed(ВидРоли[k]);
---            ИмпортЗавершен[k]                   = true;
---          end;
---        end;
---      end;
---      Hint('Выполнение...',k,секцРоли.Count);
---    end;
+    var k               : integer;
+    var локТипКалендаря : СИС2.ПользовательскийКалендарь.ТипКалендаря;
+    var locRefISF       : СИС2.ПользовательскийКалендарь.ТипКалендаря.RefISF;
+    for k = 1..секцТипыКалендаря.Count do
+      if    ТкИсф_Код[k]<>nil and ТкРаб[k]<>nil then
+        локТипКалендаря         = ТкРаб[k];
+        if  not ИмпортКалендаряВыполнен(ТкИсф_Код[k],локТипКалендаря) then
+          if локТипКалендаря<>nil then
+            ТкРаб[k]            = локТипКалендаря;
+            locRefISF           = локТипКалендаря.RefISF.AddEx;
+            locRefISF.CodeISF   = ТкИсф_Код[k];
+            locRefISF.OurINN    = Переменные.ИНН;
+            RecordPostIfNeed(локТипКалендаря);
+            ИмпортЗавершен[k]   = true;
+          end;
+        end;
+      end;
+      Hint('Импорт производственных календарей...',k,секцТипыКалендаря.Count);
+    end;
     inherited кнОК_ПриНажатии(Sender);
   end;--proc кнОК_ПриНажатии
 
