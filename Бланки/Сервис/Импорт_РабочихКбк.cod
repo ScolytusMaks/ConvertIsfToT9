@@ -1,9 +1,9 @@
 class inherited                 ТББ_Базовый.Базовые.БазовыйБланк
                                 "Импорт рабочих кбк";
 
-import СИС2             Classes Функции,ФункцииДокумента;
+import СИС2             Classes Функции,ФункцииДокумента,СтроковыеФункции;
 --import ТББ_Базовый      Classes Библио;
-import                  Classes Конвертация.Календари;
+import                  Classes Конвертация.Кбк;
 
 inclass
 
@@ -19,12 +19,7 @@ inobject private
 
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   proc СозданиеСписка;
---    var k               : integer;
---    func НаимКалендаряИсф(локКод:string):string;
---      var locRecord     : ТБ69.ISF_КАЛЕНДАРЬ;
---      locRecord         = QueryRecord(ТБ69.ISF_КАЛЕНДАРЬ,'Код="'+локКод+'"') as ТБ69.ISF_КАЛЕНДАРЬ;
---      Result            = if(locRecord<>nil,locRecord.Наим,nil);
---    end;--func НаимКалендаряИсф
+    var k               : integer;
     ИФ                  = nil;
     КБК                 = nil;
     ИмпортЗавершен      = nil;
@@ -35,11 +30,10 @@ inobject private
         Next;
       end;
     end;--with Query
---    for k = 1..LengthOfArray(ТкИсф_Код) do
---      ТкИсф_Наим[k]             = НаимКалендаряИсф(ТкИсф_Код[k]);
---      ИмпортЗавершен[k]         = ИмпортКалендаряВыполнен(ТкИсф_Код[k],ТкРаб[k]);
---    end;
     секцИстФин.Count     = LengthOfArray(ИФ);
+    for k = 1..LengthOfArray(ИФ) do
+      ИмпортЗавершен[k] = Загружено(ИФ[k].Код,КБК[k]);
+    end;
   end;--proc СозданиеСписка
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   proc шаблон_ПриОткрытии(Create :Logical);
@@ -47,72 +41,156 @@ inobject private
     СозданиеСписка;
   end;--proc шаблон_ПриОткрытии
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
-
   func Поле_ПриВходе(Cell :TemplateCell; Index :Integer;Action :Template.EnterTypes) :Logical;
-----    var locRecord               : Базовый.Справочники.РольСубъекта;
---    if    Cell.Contents = 'ТкРаб' then
---      Result            = not ИмпортЗавершен[Index];
-----      if Action<>Template.Clear then
-----        Result                          = (НомерОсновы[index]=0);
-----        locRecord                       = ВидРоли[Index];
-----        if CmOk=ВыборРоли([4,5],'',locRecord,Window.ModalWindow) then
-----          ВидРоли[Index]                = locRecord;
-----          НомерОсновы[Index]            =0;
-----        end;
-----        Return false;
-----      end;
---    end;
+    if ИмпортЗавершен[Index] then
+      OpenBlankEditor('ТББ_Базовый.Справочники.Кбк.РедРабочийКбк',КБК[Index]);
+    else
+      Return true;
+    end;
   end;--func Поле_ПриВходе
-
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
-
   proc Поле_ПриРисовании(Cell :TemplateCell; Selected :Logical; var Color :Integer;var FieldColor :Integer; Font :Font);
---    var locIndex        : integer;
---    locIndex            = Cell.Frame as integer;
---    if    Cell.Contents = 'ТкРаб' then
---      if ИмпортЗавершен[locIndex] or ТкИсф_Код[locIndex]='ДЕТИ' then
---        inherited ПриРисовании_КакЗапрещенное(Cell,Selected,Color,FieldColor,Font);
---      else
---        inherited ПриРисовании_КакПолеВыбора(Cell,Selected,Color,FieldColor,Font);
---      end;
---    end;
   end;--proc Поле_ПриРисовании
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   func Поле_ПриВыводе(Cell :TemplateCell; Value :Variant;Action :Template.OutputTypes; var Format :String) :Variant;
---    var locIndex        : integer;
---    locIndex            = Cell.Frame as integer;
---    if    Cell.Contents = 'ТкРаб' then
---      if ТкИсф_Код[locIndex]='ДЕТИ' then
---        Return          'Этот тип календаря импорту не подлежит';
---      else
---        Return          if(ТкРаб[locIndex]<>nil,ТкРаб[locIndex].Наим,nil);
---      end;
---    end;
   end;--func Поле_ПриВыводе
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   proc кнОК_ПриНажатии(Sender :Button);
---    var k               : integer;
---    var локТипКалендаря : СИС2.ПользовательскийКалендарь.ТипКалендаря;
---    var locRefISF       : СИС2.ПользовательскийКалендарь.ТипКалендаря.RefISF;
---    for k = 1..секцТипыКалендаря.Count do
---      if    ТкИсф_Код[k]<>nil and ТкРаб[k]<>nil then
---        локТипКалендаря         = ТкРаб[k];
---        if  not ИмпортКалендаряВыполнен(ТкИсф_Код[k],локТипКалендаря) then
---          if локТипКалендаря<>nil then
---            ТкРаб[k]            = локТипКалендаря;
---            locRefISF           = локТипКалендаря.RefISF.AddEx;
---            locRefISF.CodeISF   = ТкИсф_Код[k];
---            locRefISF.OurINN    = Переменные.ИНН;
---            RecordPostIfNeed(локТипКалендаря);
---            ИмпортЗавершен[k]   = true;
+    var k,l             : integer;
+    var oldCode         : string;
+    var newRecord       : ТББ_Базовый.Справочники.РабочиеКБК;
+    var newValueS       : string;
+    --Конвертация.Кбк.Выполнение;
+    for k = 1..секцИстФин.Count do
+      if not Загружено(ИФ[k].Код as string,КБК[k]) then
+        if    КБК[k]<>nil then     --Привязка к старому коду
+          КБК[k].RefISF.AddEx.CodeISF   = ИФ[k].Код;
+        elsif КБК[k]=nil then      --По возможности автоматическое создание нового кода
+          oldCode                       = ИФ[k].Код;
+          УдалитьСимволы(oldCode,'.');
+          if Length(oldCode)=18 and СтрокаСодержитТолькоЦифры(oldCode) then     --можно создать автоматом
+            newRecord                   = ТББ_Базовый.Справочники.РабочиеКБК.Create;
+            newRecord.ТипКбк            = 'КРБ';                        --В зарплате - всегда расходная статья
+            newRecord.КодУБ             = '01';                         --По умолчанию будем считать, что бюджет - федеральный. Позже можно поправить - теперь не критично.
+            newValueS                   = '';
+            for l = 1..20 do
+              if SubStr(ИФ[k].Код as string,l,1)<>'.' then
+                newValueS               = newValueS+SubStr(ИФ[k].Код as string,l,1);
+              end;
+            end;
+            newRecord.Код               = newValueS;
+            newRecord.CodeKey           = 'КРБ.'+newValueS;
+            newRecord.Имя               = ИФ[k].НАИМ as string;
+            newRecord.Наим              = ИФ[k].НАИМ as string;
+            newRecord.Псевдоним         = ИФ[k].НАИМ as string;
+            newRecord.КОСГУ.AddEx.Код   = '211';
+            newRecord.КОСГУ.AddEx.Код   = '212';
+            newRecord.КОСГУ.AddEx.Код   = '213';
+            newRecord.КОСГУ.AddEx.Код   = '220';
+            newRecord.КОСГУ.AddEx.Код   = '226';
+            newRecord.RefISF.AddEx.CodeISF      = ИФ[k].Код;
+            newRecord.Post;
+          else--
+            Message('Невозможно преобраовать код "'+ИФ[k].Код+'" в корректный код КБК. Требуется создать КБК вручную или указать существующий.');
+          end;
+        end;
+      end;--if not загружено
+    end;--for k
+
+
+--        oldCode                         = ИФ[k].Код;
+--        УдалитьСимволы(oldCode,'.');
+--        if КБК=nil then
+--          if Length(oldCode)=18 and СтрокаСодержитТолькоЦифры(oldCode) then
+--            newRecord                   = ТББ_Базовый.Справочники.РабочиеКБК.Create;
+--            newRecord.ТипКбк            = 'КРБ';                        --В зарплате - всегда расходная статья
+--            newRecord.КодУБ             = '01';                         --По умолчанию будем считать, что бюджет - федеральный. Позже можно поправить - теперь не критично.
+--            newValueS                   = '';
+--            for l = 1..20 do
+--              if SubStr(ИФ[k].Код as string,l,1)<>'.' then
+--                newValueS               = newValueS+SubStr(ИФ[k].Код as string,l,1);
+--              end;
+--            end;
+--            newRecord.Код               = newValueS;
+--            newRecord.CodeKey           = 'КРБ.'+newValueS;
+--            newRecord.Имя               = ИФ[k].НАИМ as string;
+--            newRecord.Наим              = ИФ[k].НАИМ as string;
+--            newRecord.Псевдоним         = ИФ[k].НАИМ as string;
+--            newRecord.КОСГУ.AddEx.Код   = '211';
+--            newRecord.КОСГУ.AddEx.Код   = '212';
+--            newRecord.КОСГУ.AddEx.Код   = '213';
+--            newRecord.КОСГУ.AddEx.Код   = '220';
+--            newRecord.КОСГУ.AddEx.Код   = '226';
+--            newRecord.RefISF.AddEx.CodeISF      = ИФ[k].Код;
+--            newRecord.Post;
+--          else
+--            Message('Невозможно преобраовать код "'+ИФ[k].Код+'" в корректный код КБК. Требуется создание КБК вручную.');
 --          end;
+--        else
+--          newRecord                     = КБК[k];
+--          newRecord.RefISF.AddEx.CodeISF        = ИФ[k].Код;
 --        end;
---      end;
---      Hint('Импорт производственных календарей...',k,секцТипыКалендаря.Count);
---    end;
+--      end;--if not
+--    end;--for k
     inherited кнОК_ПриНажатии(Sender);
   end;--proc кнОК_ПриНажатии
 
+----~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+--  proc кнОК_ПриНажатии(Sender :Button);
+--    var k,j             : integer;
+--    var локВидОперации  : Бюджет_ЗПиДД.Справочники.ВидыНачислений;
+--    var locRefISF       : Бюджет_ЗПиДД.Справочники.ВидыНачислений.RefISF;
+--    for k = 1..секцВидыОпераций.Count do
+--      if    НомерОсновы[k]=0 and ШаблонОперации[k]<>nil and ВидОперацииИсф[k]<>nil then
+--        if  not ИмпортОперацииВыполнен(ЗагруженноеУчреждение,ВидОперацииИсф[k] as record,локВидОперации) then
+--          локВидОперации                        = Бюджет_ЗПиДД.Библио.СоздатьОперациюПоТипу(ШаблонОперации[k].Код,ЗагруженноеУчреждение,false) as Бюджет_ЗПиДД.Справочники.ВидыНачислений;
+--          локВидОперации.Имя                    = НаимВидаОперации[k];
+--          локВидОперации.Наим                   = НаимВидаОперации[k];
+--          локВидОперации.НеИспользуется         = НеИспользуется[k];
+--          locRefISF                             = локВидОперации.RefISF.AddEx;
+--          locRefISF.CodeISF                     = ВидОперацииИсф[k].Код as string;
+--          locRefISF.MainForUnion                = Основа[k];
+--          RecordPostIfNeed(локВидОперации);
+--          ВидОперации[k]                        = локВидОперации;
+--          ИмпортЗавершен[k]                     = true;
+--        else
+--          локВидОперации.НеИспользуется         = НеИспользуется[k];
+--          for j = 1..локВидОперации.RefISF.Count do
+--            locRefISF                           = локВидОперации.RefISF.Items[j];
+--            locRefISF.MainForUnion              = (locRefISF.CodeISF=ВидОперацииИсф[k].Код as string);
+--          end;
+--          RecordPostIfNeed(локВидОперации);
+--        end;
+--      elsif НомерОсновы[k]>0 and ШаблонОперации[k]<>nil and ВидОперацииИсф[k]<>nil then
+--        j                                       = НомерОсновы[k];
+--        if  not ИмпортОперацииВыполнен(ЗагруженноеУчреждение,ВидОперацииИсф[j] as record,локВидОперации) then       --проверка импорта основы
+--          --импорт основы
+--          локВидОперации                        = Бюджет_ЗПиДД.Библио.СоздатьОперациюПоТипу(ШаблонОперации[j].Код,ЗагруженноеУчреждение,false) as Бюджет_ЗПиДД.Справочники.ВидыНачислений;
+--          локВидОперации.Имя                    = НаимВидаОперации[j];
+--          локВидОперации.Наим                   = НаимВидаОперации[j];
+--          локВидОперации.НеИспользуется         = НеИспользуется[j];
+--          locRefISF                             = локВидОперации.RefISF.AddEx;
+--          locRefISF.CodeISF                     = ВидОперацииИсф[j].Код as string;
+--          locRefISF.MainForUnion                = Основа[j];
+--          RecordPostIfNeed(локВидОперации);
+--          ВидОперации[k]                        = локВидОперации;
+--          ИмпортЗавершен[k]                     = true;
+--        else --импорт для основной операции выполнен, но требуется проверить, что существует метка включения в основную операцию дополнительных
+--          with Query.Create([Бюджет_ЗПиДД.Справочники.ВидыНачислений]) do
+--            Filter                              = 'НашеУчреждение='+Str(ЗагруженноеУчреждение)+' and RefISF.Exists(CodeISF="'+ВидОперацииИсф[k].Код as string+'")';
+--            ИмпортЗавершен[k]                   = MatchFilter(локВидОперации);
+--          end;
+--          if not ИмпортЗавершен[k] then
+--            локВидОперации.RefISF.AddEx.CodeISF = ВидОперацииИсф[k].Код as string;
+--            RecordPostIfNeed(локВидОперации);
+--          end;
+--          ВидОперации[k]                        = локВидОперации;
+--        end;
+--      end;
+--      Hint('Выполнение...',k,секцВидыОпераций.Count);
+--    end;
+--    inherited кнОК_ПриНажатии(Sender);
+--  end;--proc кнОК_ПриНажатии
 
 
 end

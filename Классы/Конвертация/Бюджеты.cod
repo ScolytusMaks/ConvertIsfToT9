@@ -13,18 +13,18 @@ inclass
                         лок¬фо                  : integer;
                         var locRecord           : Ѕюджет_«ѕиƒƒ.—правочники.¬идыЅюджета=nil
                         ):logical;
-    if локЌаше”чреждение<>nil and лок–аб бк<>nil and лок¬фо>0 then
-      if  онвертаци€. Ѕ .«агружено(лок–аб бк.CodeISF as string) then
-        with Query.Create([Ѕюджет_«ѕиƒƒ.—правочники.¬идыЅюджета]) do
-          Filter        = 'Ќаше”чреждение='+Str(локЌаше”чреждение)+' and  Ѕ ='+Str(лок–аб бк)+' and  ¬‘ќ='+Str(лок¬фо);
-          Select;
-          if not (Bof and Eof) then
-            locRecord   = Current as Ѕюджет_«ѕиƒƒ.—правочники.¬идыЅюджета;
-            Result      = true;
-          end;
-        end;--with Query
-      end;
-    end;
+--    if локЌаше”чреждение<>nil and лок–аб бк<>nil and лок¬фо>0 then
+--      if  онвертаци€. Ѕ .«агружено(лок–аб бк.CodeISF as string) then
+--        with Query.Create([Ѕюджет_«ѕиƒƒ.—правочники.¬идыЅюджета]) do
+--          Filter        = 'Ќаше”чреждение='+Str(локЌаше”чреждение)+' and  Ѕ ='+Str(лок–аб бк)+' and  ¬‘ќ='+Str(лок¬фо);
+--          Select;
+--          if not (Bof and Eof) then
+--            locRecord   = Current as Ѕюджет_«ѕиƒƒ.—правочники.¬идыЅюджета;
+--            Result      = true;
+--          end;
+--        end;--with Query
+--      end;
+--    end;
   end;--func «агружено
 
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--

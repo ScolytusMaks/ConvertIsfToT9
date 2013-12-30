@@ -1,3 +1,6 @@
 extends ТББ_Базовый.Справочники.РабочиеКбк;
-  field CodeISF                         : String;--код ИСФ
+  --field CodeISF                         : String;--код ИСФ
+  struct RefISF array Integer;                          --
+    field CodeISF               : String;               --код ИСФ
+  end;
 end;
