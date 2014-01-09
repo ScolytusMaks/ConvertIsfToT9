@@ -206,13 +206,13 @@ inclass
         RecordPostIfNeed(RecordAdr);
       end;
     end;--proc ЗагрузкаАдреса
-    proc ЗагрузкаДокументовФл(ВнешняяЗаписьФл:integer);           --Документ идентифицируется по строковой сумме полей Код,Серия,Номер.
+    proc ЗагрузкаДокументовФл;                  --Документ идентифицируется по строковой сумме полей Код,Серия,Номер.
       var locKey        : string[];
       var RecordDoc     : Базовый.Справочники.Удостоверение;
       var RecordDocType : Базовый.Классификаторы.ВидДокумента;
       var k             : integer;
       with Query.Create([FindClass('ТБ69.ISF_СОТР_ДОК') as Class Record]) do
-        Filter          = 'ФЛ='+Str(ВнешняяЗаписьФл);
+        Filter          = 'ФЛ='+Str(locRecordISF.DocId);
         Select;
         for k = 1..Count do
           locKey[1]     = Current.GetField('КОДТИПДОК') as string;
@@ -238,6 +238,7 @@ inclass
         end;
       end;--with Query
     end;--proc ЗагрузкаДокументовФл
+
     --Окончание внутренних функций.................................................................
     ОпределитьСтандартныеТипыАдреса;
     locClassRecord              = FindClass('ТБ69.ISF_ФЛ') as Class Record;
@@ -287,8 +288,7 @@ inclass
             --загрузка адресной информации
             locSetStrk                  = Current.АДРЕС_СТРУКТ as string;
             ЗагрузкаАдреса;
-
-
+            ЗагрузкаДокументовФл;
           else --запись есть
             --обновление основной записи
             ПрисвоитьНенулевоеЗначение(RecordFL,'ФамилияФизлица'        ,locFm);
@@ -313,12 +313,10 @@ inclass
             --обновление адресной информации
             locSetStrk                  = Current.АДРЕС_СТРУКТ as string;
             ЗагрузкаАдреса;
-            ЗагрузкаДокументовФл(Current.DocId as integer);
-
-
+            ЗагрузкаДокументовФл;
           end; --тест на выполнение загрузки
           k     = k+1;
-          Hint('Выполнение...',k,Count);
+          Hint('Импорт (обновление) данных о физлицах...',k,Count);
           Next;
         end;
       end;--with Query

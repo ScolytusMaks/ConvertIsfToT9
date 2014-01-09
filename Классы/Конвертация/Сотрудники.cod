@@ -5,6 +5,13 @@ import                  Classes Библио,Конвертация.ФизЛица;
 
 inclass
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+--  func ПроверкаНастройки:logical;
+--    Result = true;
+--    if Сервис.Импорт_СотрудниковНастройка.ТипЗванияСотрудника = 0 then
+--      Message('Не выполнена настройка импорта сотрудников!');
+--      Return false;
+--    end;
+--  end;
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   func ЗагруженоВсе:logical;
     var locClassRecord  : Class Record;
@@ -26,7 +33,6 @@ inclass
 
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   func Выполнение:integer;
-    var locClassRecord  : Class Record;
     var locRecordIsfFl  : Record;
     var locRecordISF    : Record;
     var locFIO          : string;
@@ -62,107 +68,137 @@ inclass
     end;--func ПоследняяДолжность
     --.............................................................................................
     proc ИмпортНазначений(RecordWorkP9  : Гарнец_ПерсоналБазовый.АтрибутыСотрудника.ПериодРаботы);
-      var ClassRecordWorkP6     : Class Record;
       var RecordWorkN9          : Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение;
       var locDat                : date;
       if not НазначенияЗагружены then
-        if ПериодРаботыЗагружен(RecordWorkP9) then
-          ClassRecordWorkP6     = FindClass('ТБ69.ISF_СОТР_ПЕРЕМЕЩ') as Class Record;
-          if ClassRecordWorkP6<>nil then
-            with Query.Create([ClassRecordWorkP6]) do
-              Filter            = 'СОТР='+Str(locRecordISF.DocId);
-              Order             = 'ДАТПЕРН+';
-              Select;
-              while not Eof do
-                RecordWorkN9    = Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение.Create;
-                RecordWorkN9.Сотрудник          = RecordSotr;
-                RecordWorkN9.ПериодРаботы       = RecordWorkP9;
-                RecordWorkN9.Подразделение      = ПодразделениеПоКодуИсф(Current.КОДПОДР as string);
-                RecordWorkN9.Должность          = ПоследняяДолжность(Current.СОТР as integer,Current.DocId as integer);
-                RecordWorkN9.ДатаНачала         = Current.ДатПерН as date;
-                locDat                          = Current.ДатПерК as date;
-                RecordWorkN9.ДатаОкончания      = if(locDat=01.01.9999,nil,locDat);
-                RecordWorkN9.Post;
-                Next;
-              end;
-            end;--with Query
+        with Query.Create([ТБ69.ISF_СОТР_ПЕРЕМЕЩ]) do
+          Filter                = 'СОТР='+Str(locRecordISF.DocId);
+          Order                 = 'ДАТПЕРН+';
+          Select;
+          while not Eof do
+            RecordWorkN9                = Гарнец_ПерсоналБазовый.АтрибутыСотрудника.Назначение.Create;
+            RecordWorkN9.Сотрудник      = RecordSotr;
+            RecordWorkN9.ПериодРаботы   = RecordWorkP9;
+            RecordWorkN9.Подразделение  = ПодразделениеПоКодуИсф(Current.КОДПОДР as string);
+            RecordWorkN9.Должность      = ПоследняяДолжность(Current.СОТР as integer,Current.DocId as integer);
+            RecordWorkN9.ДатаНачала     = Current.ДатПерН as date;
+            locDat                      = Current.ДатПерК as date;
+            RecordWorkN9.ДатаОкончания  = if(locDat=01.01.9999,nil,locDat);
+            RecordWorkN9.КолСтавок      = 1;
+            RecordWorkN9.ТипГрафика     = ТипГрафикаПоКодуИсф(Current.КОДГРРАБ as string);
+            RecordWorkN9.Post;
+            Next;
           end;
-        end;
-      end;
+        end;--with Query
+      end;--if not НазначенияЗагружены
     end;--proc ИмпортНазначений
     --.............................................................................................
     proc ИмпортПериодаРаботы;
-      var ClassRecordWorkP6     : Class Record;
       var RecordWorkP6          : Record;
       var RecordWorkP9          : Гарнец_ПерсоналБазовый.АтрибутыСотрудника.ПериодРаботы;
       var locDat                : date;
       if not ПериодРаботыЗагружен(RecordWorkP9) then
-        ClassRecordWorkP6       = FindClass('ТБ69.ISF_СОТР_ПЕРЕМЕЩ') as Class Record;
-        if ClassRecordWorkP6<>nil then
-          RecordWorkP9          = Гарнец_ПерсоналБазовый.АтрибутыСотрудника.ПериодРаботы.Create;
-          RecordWorkP6          = QueryRecord(ClassRecordWorkP6,'СОТР='+Str(locRecordISF.DocId),'ДАТПЕРН+');
-          if RecordWorkP6<>nil then
-            RecordWorkP9.Сотрудник      = RecordSotr;
-            RecordWorkP9.ФормаЗачисления= ФормаЗачисленияПоКодуИсф(RecordWorkP6.КодЗач as string);
-            RecordWorkP9.ДатаПриема     = RecordWorkP6.ДатПерН as date;
-            RecordWorkP9.ДатаНачала     = RecordWorkP6.ДатПерН as date;
+        RecordWorkP9                    = Гарнец_ПерсоналБазовый.АтрибутыСотрудника.ПериодРаботы.Create;
+        RecordWorkP6                    = QueryRecord(ТБ69.ISF_СОТР_ПЕРЕМЕЩ,'СОТР='+Str(locRecordISF.DocId),'ДАТПЕРН+');
+        if RecordWorkP6<>nil then
+          RecordWorkP9.Сотрудник        = RecordSotr;
+          RecordWorkP9.ФормаЗачисления  = ФормаЗачисленияПоКодуИсф(RecordWorkP6.КодЗач as string);
+          RecordWorkP9.ДатаПриема       = RecordWorkP6.ДатПерН as date;
+          RecordWorkP9.ДатаНачала       = RecordWorkP6.ДатПерН as date;
+        end;
+        RecordWorkP6                    = QueryRecord(ТБ69.ISF_СОТР_ПЕРЕМЕЩ,'СОТР='+Str(locRecordISF.DocId),'ДАТПЕРН-');
+        if RecordWorkP6<>nil then
+          locDat                        = RecordWorkP6.ДатПерК as date;
+          if locDat<>01.01.9999 then
+          RecordWorkP9.ДатаОкончания    = RecordWorkP6.ДатПерК as date;
+          RecordWorkP9.ДатаУвольнения   = RecordWorkP6.ДатПерК as date;
           end;
-          RecordWorkP6          = QueryRecord(ClassRecordWorkP6,'СОТР='+Str(locRecordISF.DocId),'ДАТПЕРН-');
-          if RecordWorkP6<>nil then
-            locDat              = RecordWorkP6.ДатПерК as date;
-            if locDat<>01.01.9999 then
-            RecordWorkP9.ДатаОкончания  = RecordWorkP6.ДатПерК as date;
-            RecordWorkP9.ДатаУвольнения = RecordWorkP6.ДатПерК as date;
-            end;
-          end;
-          RecordWorkP9.Post;
-          ИмпортНазначений(RecordWorkP9);
-        end;--ClassRecordWorkP6<>nil
+        end;
+        RecordWorkP9.Post;
+        ИмпортНазначений(RecordWorkP9);
       end;
     end;--proc ИмпортПериодаРаботы
-    --Окончание внутренних функций.................................................................
-    locClassRecord              = FindClass('ТБ69.ISF_СОТР') as Class Record;
-    if locClassRecord=nil then
-      Message('Класс ISF_ФЛ не найден.');
-    else
-      with Query.Create([locClassRecord]) do
+    --.............................................................................................
+    func РольЗагружена(локРоль       : Базовый.Справочники.РольСубъекта):logical;
+      with  Query.Create([Гарнец_ПерсоналБазовый.АтрибутыФизлица.Роль]) do
+        Filter          = 'Физлицо='+str(RecordFl)+' and Роль='+Str(локРоль);
         Select;
-        for k = 1..Count do
-          if not ЗагруженСотр(Current.ТАБ as string) then
-            locRecordISF        = Current as record;
-            locRecordIsfFl      = ФизлицоИсфПоКлючу(locRecordISF.ФЛ as integer);
-            locFIO              = locRecordIsfFl.ФИОТ as string;
-            locFm               = СБольшойБуквы(Trim(ExtractWord(locFIO,1)));
-            locIm               = СБольшойБуквы(Trim(ExtractWord(locFIO,2)));
-            locOt               = СБольшойБуквы(Trim(ExtractWord(locFIO,3)));
-            locFIO              = locFm+' '+locIm+' '+locOt;
-            locDr               = locRecordIsfFl.ДРОЖД as Date;
-            if ЗагруженоФл(locFm,locIm,locOt,locDr,RecordFl)  then
-              RecordSotr                        = Базовый.Данные.Субъект.Create;
-              RecordSotr.Assign(RecordFl);
-              RecordSotr.ФизическоеЛицо         = false;
-              RecordSotr.Сотрудник              = true;
-              RecordSotr.Пол                    = nil;
-              RecordSotr.ДатаРождения           = nil;
-              RecordSotr.ДолжностьСотрудника    = ДолжностьПоКодуИсф(Current.КОДДОЛЖН as string);
-              RecordSotr.ПодразделениеСотрудника= ПодразделениеПоКодуИсф(Current.КОДПОДР as string);
-              RecordSotr.Субъект                = Переменные.ЗагруженноеУчреждение;
-              RecordSotr.ФизЛицо                = RecordFl;
-              RecordSotr.НашеУчреждение         = Переменные.ЗагруженноеУчреждение;
-              RecordSotr.Код                    = ТББ_Базовый.Нумератор.НовыйКод(RecordSotr);
-              RecordSotr.ТабНомер               = ТББ_Базовый.Библио.ТабНомерПоКоду(RecordSotr.Код);
-              RecordSotr.ГражданствоФл          = nil;
-              RecordSotr.НалоговыйСтатусФл      = nil;
-              RecordSotr.CodeISF                = Current.ТАБ as string;
-              RecordSotr.Post;
-              ИмпортПериодаРаботы;
-            end;
+        Result          = not (Bof and Eof);
+        Close;
+      end;
+    end;--func РольЗагружена
+    --.............................................................................................
+    --в Т6 звания привязывались к сотруднику, а не к физлицу!
+    proc ИмпортИсторииЗванийФл;
+      var локРоль               : Базовый.Справочники.РольСубъекта;
+      var RecordWorkZ9          : Гарнец_ПерсоналБазовый.АтрибутыФизлица.Роль;
+      var locDat                : date;
+      with Query.Create([ТБ69.ISF_СОТР_ЗВА]) do
+        Filter                  = 'СОТР='+Str(locRecordISF.DocId);
+        Order                   = 'ДАТН+';
+        Select;
+        while not Eof do
+          локРоль                       = Библио.ЗваниеПоКодуИсф(Current.Код as string);
+          if not РольЗагружена(локРоль) then
+            RecordWorkZ9                = Гарнец_ПерсоналБазовый.АтрибутыФизлица.Роль.Create;
+            RecordWorkZ9.Физлицо        = RecordFl;
+            RecordWorkZ9.ДатаНачала     = Current.ДатН as date;
+            locDat                      = Current.ДатК as date;
+            RecordWorkZ9.ДатаОкончания  = if(locDat=01.01.9999,nil,locDat);
+            RecordWorkZ9.Роль           = Библио.ЗваниеПоКодуИсф(Current.Код as string);
+            RecordWorkZ9.Основание      = Current.Приказ as string;
+            RecordWorkZ9.Post;
           end;
-          Hint('Выполнение...',k,Count);
           Next;
-        end;
+        end;--while not
+        Close;
       end;--with Query
-    end;
+    end;--proc ИмпортИсторииЗванийФл
+    --.............................................................................................
+    proc ИмпортНалоговыхВычетов;
+
+    end; --proc ИмпортНалоговыхВычетов
+
+    --Окончание внутренних функций.................................................................
+    with Query.Create([ТБ69.ISF_СОТР]) do
+      Select;
+      --for k = 1..Count do
+      for k = 1..5     do
+        if not ЗагруженСотр(Current.ТАБ as string) then
+          locRecordISF          = Current as record;
+          locRecordIsfFl        = ФизлицоИсфПоКлючу(locRecordISF.ФЛ as integer);
+          locFIO                = locRecordIsfFl.ФИОТ as string;
+          locFm                 = СБольшойБуквы(Trim(ExtractWord(locFIO,1)));
+          locIm                 = СБольшойБуквы(Trim(ExtractWord(locFIO,2)));
+          locOt                 = СБольшойБуквы(Trim(ExtractWord(locFIO,3)));
+          locFIO                = locFm+' '+locIm+' '+locOt;
+          locDr                 = locRecordIsfFl.ДРОЖД as Date;
+          if ЗагруженоФл(locFm,locIm,locOt,locDr,RecordFl)  then
+            RecordSotr                          = Базовый.Данные.Субъект.Create;
+            RecordSotr.Assign(RecordFl);
+            RecordSotr.ФизическоеЛицо           = false;
+            RecordSotr.Сотрудник                = true;
+            RecordSotr.Пол                      = nil;
+            RecordSotr.ДатаРождения             = nil;
+            RecordSotr.ДолжностьСотрудника      = ДолжностьПоКодуИсф(Current.КОДДОЛЖН as string);
+            RecordSotr.ПодразделениеСотрудника  = ПодразделениеПоКодуИсф(Current.КОДПОДР as string);
+            RecordSotr.Субъект                  = Переменные.ЗагруженноеУчреждение;
+            RecordSotr.ФизЛицо                  = RecordFl;
+            RecordSotr.НашеУчреждение           = Переменные.ЗагруженноеУчреждение;
+            RecordSotr.Код                      = ТББ_Базовый.Нумератор.НовыйКод(RecordSotr);
+            RecordSotr.ТабНомер                 = ТББ_Базовый.Библио.ТабНомерПоКоду(RecordSotr.Код);
+            RecordSotr.ГражданствоФл            = nil;
+            RecordSotr.НалоговыйСтатусФл        = nil;
+            RecordSotr.CodeISF                  = Current.ТАБ as string;
+            RecordSotr.Post;
+            ИмпортПериодаРаботы;
+            ИмпортИсторииЗванийФл;
+          end;
+        end;
+        Hint('Импорт (обновление) данных о сотрудниках...',k,Count);
+        Next;
+      end;
+    end;--with Query
   end;--func Выполнение
 
 

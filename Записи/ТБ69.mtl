@@ -129,6 +129,21 @@ Record ISF_ÊÀÒ_ÑÒÀÂÊÀ ="ISF_ÊÀÒ@ÑÒÀÂÊÀ"("UKEY":Integer);
   Field Çíà÷åíèå :Real ="Çíà÷åíèå";
 End;
 
+Record ISF_ĞÀÇĞ ="ISF_ĞÀÇĞ"("UKEY" :Integer);
+--  Field CreateTime :Date ="CreateTime";
+--  Field UpdateTime :Date ="UpdateTime";
+  Field ÊÎÄ :String ="ÊÎÄ";
+  Field ÍÀÈÌ :String ="ÍÀÈÌ";
+  Field ĞÀÇĞßÄ_ÅÒÑ :Integer ="ĞÀÇĞßÄ_ÅÒÑ";
+  Field ÁÀÇ_ÑÒÀÂÊÀ :Real ="ÁÀÇ_ÑÒÀÂÊÀ";
+  Field ÏĞÎÖÅÍÒ :Real ="ÏĞÎÖÅÍÒ";
+End;
+
+Record ISF_ĞÀÇĞ_ÑÒÀÂÊÀ ="ISF_ĞÀÇĞ@ÑÒÀÂÊÀ"("UKEY":Integer);
+  Field CARDUKEY :Integer ="CARDUKEY";
+  Field Ïåğèîä :Date ="Ïåğèîä";
+  Field Çíà÷åíèå :Real ="Çíà÷åíèå";
+End;
 
 
 Record ISF_ÂÈÄÛ_ÍÀ× ="ISF_ÂÈÄÛ_ÍÀ×"("UKEY" :Integer);
@@ -372,6 +387,19 @@ Record ISF_ÑÎÒĞ_ÄÎËÆÍ ="ISF_ÑÎÒĞ_ÄÎËÆÍ"("UKEY" :Integer);
   Field ÏĞÈÊÀÇ :String ="ÏĞÈÊÀÇ";
   Field ÊÎÄØÒ :String ="ÊÎÄØÒ";
   Field ÊÎËÑÒÀÂÎÊÇ :Real ="ÊÎËÑÒÀÂÎÊÇ";
+End;
+
+Record ISF_ÑÎÒĞ_ÇÂÀ ="ISF_ÑÎÒĞ_ÇÂÀ"("UKEY" :Integer);
+--  Field CreateTime :Date ="CreateTime";
+--  Field UpdateTime :Date ="UpdateTime";
+  Field ÑÎÒĞ :Integer ="ÑÎÒĞ";
+  Field ÏÎÄĞ :Integer ="ÏÎÄĞ";
+  Field ÄÀÒÍ :Date ="ÄÀÒÍ";
+  Field ÄÀÒÊ :Date ="ÄÀÒÊ";
+  Field ÊÎÄ :String ="ÊÎÄ";
+  Field ÍÀÈÌ :String ="ÍÀÈÌ";
+  Field ÍÀ× :Integer ="ÍÀ×";
+  Field ÏĞÈÊÀÇ :String ="ÏĞÈÊÀÇ";
 End;
 
 

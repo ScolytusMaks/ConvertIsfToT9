@@ -135,7 +135,6 @@ inclass
           end;
           Close;
         end;
-    --Создание массива дат индексаций
       end;
     end;
   end;--proc Выполнение

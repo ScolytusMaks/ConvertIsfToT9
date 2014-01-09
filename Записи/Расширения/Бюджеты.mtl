@@ -1,0 +1,3 @@
+extends Бюджет_ЗПиДД.Справочники.ВидыБюджета;
+  field CodeISF                         : String;               --код ИСФ
+end;

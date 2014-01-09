@@ -1,0 +1,5 @@
+extends Гарнец_ПерсоналБазовый.Справочники.Разряды;
+  field UKeyISF                         : integer;
+  field CodeISF                         : String;--код ИСФ
+  field OurINN                          : String;               --импортировано в нашем учреждении (по признаку ИНН)
+end;
