@@ -77,7 +77,7 @@ inobject
           Close;
         end;--with Query
         --Создание массива дат индексаций
-        with Query.Create([ТБ69.ISF_ЗВА_СТАВКА]) do
+        with Query.Create([ТБ69.ISF_РАЗР_СТАВКА]) do
           Filter        = 'CARDUKEY in '+Str(локмКлючСтавки);
           Select;
           while not Eof do
@@ -86,7 +86,7 @@ inobject
           end;
           Close;
         end;--with Query
-        --Создание позици индексаций
+        --Создание позицй индексаций
         with Query.Create([Гарнец_ПерсоналБазовый.Справочники.Разряды]) do
           Filter        = 'UKeyISF in '+Str(локмКлючСтавки);
           Select;
@@ -97,7 +97,7 @@ inobject
           Close;
         end;--with Query
       end;
-    end;
+    end;--for k
     inherited кнОК_ПриНажатии(Sender);
   end;--proc кнОК_ПриНажатии
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--

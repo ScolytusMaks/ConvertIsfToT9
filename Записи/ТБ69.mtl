@@ -145,6 +145,13 @@ Record ISF_пюгп_ярюбйю ="ISF_пюгп@ярюбйю"("UKEY":Integer);
   Field гМЮВЕМХЕ :Real ="гМЮВЕМХЕ";
 End;
 
+Record ISF_бшяксцю ="ISF_бшяксцю"("UKEY" :Integer);
+  Field дюрхгл :Date ="дюрхгл";
+  Field йнд :String ="йнд";
+  Field мюхл :String ="мюхл";
+  Field мнлепйндю :Integer ="мнлепйндю";
+End;
+
 
 Record ISF_бхдш_мюв ="ISF_бхдш_мюв"("UKEY" :Integer);
   Field хяртхм :String ="хяртхм";
@@ -199,6 +206,36 @@ Record ISF_бхдш_мюв ="ISF_бхдш_мюв"("UKEY" :Integer);
   Field йндйюрецнпхх :String ="йндйюрецнпхх";
   Field оепхндхвмнярэ :Integer ="оепхндхвмнярэ";
 End;
+
+
+Record ISF_бхдш_сд ="ISF_бхдш_сд"("UKEY" :Integer);
+  Field хяртхм :String ="хяртхм";
+  Field йюрецнпхъ :Integer ="йюрецнпхъ";
+  Field йнд :String ="йнд";
+  Field йнд2 :String ="йнд2";
+  Field мюхл :String ="мюхл";
+  Field юкцнпхрл :String ="юкцнпхрл";
+  Field явйпе :String ="явйпе";
+  Field явдеа :String ="явдеа";
+  Field опхнпхрер :Integer ="опхнпхрер";
+  Field мюхлонкъ1 :String ="мюхлонкъ1";
+  Field дноюмюкхр :String ="дноюмюкхр";
+  Field сдепфюмхъ :String ="сдепфюмхъ";
+--  Field т49 :Integer ="т49";
+--  Field р49 :Integer ="р49";
+--  Field р51 :Integer ="р51";
+  Field йай :String ="йай";
+  Field янаярб_пейб :String ="янаярб_пейб";
+  Field янаярб_аюмй :String ="янаярб_аюмй";
+  Field пейб :String ="пейб";
+  Field аюмй :String ="аюмй";
+  Field нвепедмнярэ :Integer ="нвепедмнярэ";
+  Field мюгмювемхе :String ="мюгмювемхе";
+  Field ме_нрнапюфюрэ :Integer ="ме_нрнапюфюрэ";
+--  Field юбрнп :String ="юбрнп";
+  Field йндсв :String ="йндсв";
+End;
+
 
 
 Record ISF_янрп_днй ="ISF_янрп_днй"("UKEY" :Integer);
@@ -400,6 +437,23 @@ Record ISF_янрп_гбю ="ISF_янрп_гбю"("UKEY" :Integer);
   Field мюхл :String ="мюхл";
   Field мюв :Integer ="мюв";
   Field опхйюг :String ="опхйюг";
+End;
+
+Record ISF_янрп_мюв ="ISF_янрп_мюв"("UKEY" :Integer);
+--  Field CreateTime :Date ="CreateTime";
+--  Field UpdateTime :Date ="UpdateTime";
+  Field янрп :Integer ="янрп";
+  Field ондп :Integer ="ондп";
+  Field дюрм :Date ="дюрм";
+  Field дюрй :Date ="дюрй";
+  Field йнд :String ="йнд";
+  Field мюхл :String ="мюхл";
+  Field онке1 :Real ="онке1";
+  Field онке2 :Real ="онке2";
+  Field онке3 :Real ="онке3";
+  Field онке4 :String ="онке4";
+  Field опхнпхрер :Integer ="опхнпхрер";
+  Field йнллемр :String ="йнллемр";
 End;
 
 

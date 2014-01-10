@@ -1,0 +1,136 @@
+class "";
+
+import ТББ_Базовый      classes КонстантыРолей;
+import СИС2             classes Функции,ФункцииДокумента;
+import ТББ_Базовый      Classes СтроковыеФункции,Нумератор;
+
+inclass
+
+
+----~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+--  func ЕстьТаблицаРазрядов(локНаимГруппы:string;var locGroup:Гарнец_ПерсоналБазовый.Справочники.Разряды):logical;
+--    with Query.Create([Гарнец_ПерсоналБазовый.Справочники.Разряды]) do
+--      Filter            = 'isGroup=1 and Наим="'+локНаимГруппы+'"';
+--      Select;
+--      Result            = not (Bof and Eof);
+--      if Result then
+--        locGroup        = Current;
+--      end;
+--      Close;
+--    end;
+--  end;
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func ГруппаТаблицСтавокЕсть(локТипСтажа:Гарнец_ПерсоналБазовый.Справочники.ТипСтажа;var локТаблица:Гарнец_ПерсоналБазовый.Справочники.СтавкиПНВЛ=nil):logical;
+    with Query.Create([Гарнец_ПерсоналБазовый.Справочники.СтавкиПНВЛ]) do
+      Filter            = 'isGroup=-1 and ТипСтажа='+Str(локТипСтажа);
+      Select;
+      Result            = not (Bof and Eof);
+      if Result then
+        локТаблица      = Current;
+      end;
+      Close;
+    end;
+  end;--func ГруппаТаблицСтавокЕсть
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func ЗагруженТипСтажа(локКодИсф:string):logical;
+    with Query.Create([Гарнец_ПерсоналБазовый.Справочники.ТипСтажа]) do
+      Filter            = 'CodeISF="'+локКодИсф+'" and OurINN="'+Переменные.ИНН+'"';
+      Select;
+      Result            = not (Bof and Eof);
+      Close;
+    end;
+  end;--func Загружено
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  func ЗагруженыВсеТипыСтажа:logical;
+    Result      = true;
+    with Query.Create([ТБ69.ISF_ВЫСЛУГА]) do
+      Select;
+      while not Eof do
+        if not ЗагруженТипСтажа(Current.Код as string) then
+           Result       = false;
+           Break;
+         end;
+         Next;
+      end;--while not Eof
+    end;--with Query
+  end;--func ЗагруженоВсе
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+  proc Выполнение;
+    var мКодСтажаИсф    : string[];
+    var k               : integer;
+    var NewRecordCode   : Гарнец_ПерсоналБазовый.Справочники.ТипСтажа;
+    var OldRecordCode   : ТБ69.ISF_ВЫСЛУГА;
+    var локГрТаблиц     : Гарнец_ПерсоналБазовый.Справочники.СтавкиПНВЛ;
+
+    with Query.Create([ТБ69.ISF_ВЫСЛУГА]) do
+      Order             = 'КОД+;НОМЕРКОДА+';
+      Select;
+      while not Eof do
+        if not ЗагруженТипСтажа(Current.Код) then
+          NewRecordCode           = Гарнец_ПерсоналБазовый.Справочники.ТипСтажа.Create;
+          NewRecordCode.Код       = ТББ_Базовый.Нумератор.НовыйКод(newRecordCode);
+          OldRecordCode           = Current as ТБ69.ISF_ВЫСЛУГА;
+          if OldRecordCode<>nil then
+            NewRecordCode.Наим            = OldRecordCode.Наим;
+            NewRecordCode.Имя             = OldRecordCode.Наим;
+            NewRecordCode.НаимВКарточке   = OldRecordCode.Наим;
+          end;
+          NewRecordCode.Закладка  = 2;
+          NewRecordCode.CodeISF   = Current.Код;
+          NewRecordCode.OurINN    = Переменные.ИНН;
+          NewRecordCode.Post;
+          if not ГруппаТаблицСтавокЕсть(NewRecordCode) then
+            локГрТаблиц           = Гарнец_ПерсоналБазовый.Справочники.СтавкиПНВЛ.Create;
+            локГрТаблиц.isGroup   = true;
+            локГрТаблиц.Код       = ТББ_Базовый.Нумератор.НовыйКод(локГрТаблиц,ТипНумерации_ИерархическийСправочник);
+            локГрТаблиц.Наим      = OldRecordCode.Наим;
+            локГрТаблиц.Имя       = OldRecordCode.Наим;
+            локГрТаблиц.ТипСтажа  = NewRecordCode;
+            локГрТаблиц.Post;
+          end;
+        end;
+        Next;
+      end;--while not Eof
+    end;--with Query
+
+
+    ------------------------------
+--    with Query.Create([ТБ69.ISF_ВЫСЛУГА]) do
+--      Select;
+--      while not Eof do
+--        AddInArray(мКодСтажаИсф,Current.Код,true);
+--        Next;
+--      end;--while not Eof
+--    end;--with Query
+--    for k = 1..LengthOfArray(мКодСтажаИсф) do
+--      if not ЗагруженТипСтажа(мКодСтажаИсф[k]) then
+--        NewRecordCode           = Гарнец_ПерсоналБазовый.Справочники.ТипСтажа.Create;
+--        NewRecordCode.Код       = ТББ_Базовый.Нумератор.НовыйКод(newRecordCode);
+--        OldRecordCode           = QueryRecord(ТБ69.ISF_ВЫСЛУГА,'Код="'+мКодСтажаИсф[k]+'"','НОМЕРКОДА+') as ТБ69.ISF_ВЫСЛУГА;
+--        if OldRecordCode<>nil then
+--          NewRecordCode.Наим            = OldRecordCode.Наим;
+--          NewRecordCode.Имя             = OldRecordCode.Наим;
+--          NewRecordCode.НаимВКарточке   = OldRecordCode.Наим;
+--        end;
+--        NewRecordCode.Закладка  = 2;
+--        NewRecordCode.CodeISF   = мКодСтажаИсф[k];
+--        NewRecordCode.OurINN    = Переменные.ИНН;
+--        NewRecordCode.Post;
+--        if not ГруппаТаблицСтавокЕсть(NewRecordCode) then
+--          локГрТаблиц           = Гарнец_ПерсоналБазовый.Справочники.СтавкиПНВЛ.Create;
+--          локГрТаблиц.isGroup   = true;
+--          локГрТаблиц.Код       = ТББ_Базовый.Нумератор.НовыйКод(локГрТаблиц,ТипНумерации_ИерархическийСправочник);
+--          локГрТаблиц.Наим      = OldRecordCode.Наим;
+--          локГрТаблиц.Имя       = OldRecordCode.Наим;
+--          локГрТаблиц.ТипСтажа  = NewRecordCode;
+--          локГрТаблиц.Post;
+--        end;
+--      end;
+--    end;--for k
+  end;--proc Выполнение
+
+--~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
+
+inobject
+
+end

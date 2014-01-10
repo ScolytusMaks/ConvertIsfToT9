@@ -4,3 +4,11 @@ extends Бюджет_ЗПиДД.Справочники.ВидыНачислений;
     field MainForUnion          : Logical;              --Признак основы для объединения
   end;
 end;
+
+
+extends Бюджет_ЗПиДД.Справочники.ВидыУдержаний;
+  struct RefISF array Integer;                          --Виды операций Т6, соответствующие этому виду удержания
+    field CodeISF               : String;               --код ИСФ
+    field MainForUnion          : Logical;              --Признак основы для объединения
+  end;
+end;

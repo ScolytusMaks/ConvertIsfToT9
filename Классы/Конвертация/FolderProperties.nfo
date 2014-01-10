@@ -6,10 +6,13 @@
   <Item Name="КБК"/>
   <Item Name="Бюджеты"/>
   <Item Name="ВидыНачислений"/>
+  <Item Name="ВидыУдержаний"/>
   <Item Name="Должности"/>
   <Item Name="Звания"/>
   <Item Name="Квалификации"/>
   <Item Name="СтавкиРолей"/>
+  <Item Name="СтавкиРазрядов"/>
+  <Item Name="ТипыСтажа"/>
   <Item Name="ФизЛица"/>
   <Item Name="Сотрудники"/>
 </Items>
