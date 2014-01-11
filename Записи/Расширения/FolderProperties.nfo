@@ -3,4 +3,11 @@
 <Items>
   <Item Name="РабочиеКбк"/>
   <Item Name="ВидыОпераций"/>
+  <Item Name="Бюджеты"/>
+  <Item Name="РольСубъекта"/>
+  <Item Name="СтавкиРазрядов"/>
+  <Item Name="Субъекты"/>
+  <Item Name="ТипКалендаря"/>
+  <Item Name="ТипыСтажа"/>
+  <Item Name="ВычетыНдфл"/>
 </Items>

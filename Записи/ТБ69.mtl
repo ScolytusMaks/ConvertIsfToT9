@@ -379,6 +379,27 @@ Record ISF_янрп ="ISF_янрп"("UKEY" :Integer);
   Field ме_опхлемърэ_бшв :Integer ="ме_опхлемърэ_бшв";
 End;
 
+
+
+Record ISF_янрп_бшв ="ISF_янрп_бшв"("UKEY" :Integer);
+  Field тк :Integer ="тк";
+  Field янрп :Integer ="янрп";
+  Field гюъбкемхе :Integer ="гюъбкемхе";
+  Field дюрм :Date ="дюрм";
+  Field дюрй :Date ="дюрй";
+  Field йнд :String ="йнд";
+  Field мюхл :String ="мюхл";
+  Field онке1 :Real ="онке1";
+  Field йнллемр :String ="йнллемр";
+  Field свюыхияъ :Integer ="свюыхияъ";
+  Field хлъ_пеаемйю :String ="хлъ_пеаемйю";
+  Field мнлеп_яопюбйх_хмб :String ="мнлеп_яопюбйх_хмб";
+  Field дюрю_яопюбйх_хмб :Date ="дюрю_яопюбйх_хмб";
+  Field дюрю_яопюбйх_хмбй :Date ="дюрю_яопюбйх_хмбй";
+  Field цпсоою_хмб :Integer ="цпсоою_хмб";
+  Field япнй_яопюбйх_хмб :String ="япнй_яопюбйх_хмб";
+End;
+
 Record ISF_янрп_оепелеы ="ISF_янрп_оепелеы"("UKEY" :Integer);
 --  Field CreateTime :Date ="CreateTime";
 --  Field UpdateTime :Date ="UpdateTime";

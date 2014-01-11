@@ -25,6 +25,7 @@ inobject
                                                 var этап_РазрядыНастройка       : string = 'Настройка';
   var этап_Разряды              : logical;      var этап_РазрядыНадпись         : string = 'Ставки тарифных разрядов';
   var этап_ТипыСтажа            : logical;      var этап_ТипыСтажаНадпись       : string = 'Типы стажа';
+                                                var этап_СтавкиСтажаНадпись     : string = 'Ставки надбавок за стаж';
 
   var секцИмпортНачислений      : TemplateSection;
   var секцИмпортУдержаний       : TemplateSection;
@@ -341,6 +342,8 @@ inobject
         Сервис.Импорт_Разрядов.ShowFormEx(,Window.ModalWindow);
       elsif Cell.Contents='этап_ТипыСтажаНадпись' then
         Гарнец_ПерсоналБазовый.Справочники.картТипСтажа.ShowFormEx(,,Window.ModalWindow);
+      elsif Cell.Contents='этап_СтавкиСтажаНадпись' then
+        Гарнец_ПерсоналБазовый.Справочники.картСтавкиПНВЛ.ShowFormEx(,'not Match(Код,"000*")',Window.ModalWindow);
 
       -----------------------------------------------------
       elsif Cell.Contents='этап_УчреждениеНадпись' then
