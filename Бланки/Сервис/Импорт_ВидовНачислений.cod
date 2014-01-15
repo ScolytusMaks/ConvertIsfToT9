@@ -70,15 +70,18 @@ inobject private
           for j = 1..Current.RefISF.Count as integer do
             if Current.RefISF.Items[j].MainForUnion as logical then
               ¬идќперации»сф[k] = QueryRecord(locClassRecord,' од="'+Current.RefISF.Items[j].CodeISF as string+'"');
-              Break;
-            end;
-          end;
+
           »мпорт«авершен[k]     = true;
           Ќаим¬идаќперации[k]   = Current.Ќаим as string;
           ¬идќперации[k]        = Current as Ѕюджет_«ѕиƒƒ.—правочники.¬идыЌачислений;
           Ўаблонќперации[k]     = Current.“ип–асчета as Ѕюджет_«ѕиƒƒ.—правочники.“ипы–асчетаЌачислений;
           ќснова[k]             = true;
           Ќе»спользуетс€[k]     = Current.Ќе»спользуетс€ as logical;
+
+
+              Break;
+            end;
+          end;
           Next;
         end;
       end;--with Query
