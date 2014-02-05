@@ -13,7 +13,7 @@ inclass
       Select;
       Result            = not (Bof and Eof);
       if Result then
-        locGroup        = Current;
+        locGroup        = Current as Гарнец_ПерсоналБазовый.Справочники.Разряды;
       end;
       Close;
     end;

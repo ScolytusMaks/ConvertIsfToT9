@@ -1,8 +1,12 @@
 class inherited ТББ_Базовый.Базовые.БазовыйБланк "Конвертер из ТБ 6.9";
 
 inclass         
-  stored var этап_ВЗвСтавкиИгнорировать   : logical;
-  stored var этап_СЗвСтавкиИгнорировать   : logical;
+  stored var этап_ЗвИгнорировать        : logical;
+  stored var этап_ВЗвСтавкиИгнорировать : logical;
+  stored var этап_СЗвСтавкиИгнорировать : logical;
+  stored var этап_КвлИгнорировать       : logical;
+  stored var этап_РазрядыИгнорировать   : logical;
+  stored var ДатаНачалаРасчетовТ9       : date:=01.01.2014;
 
 inobject
   var  кнВыполнение1            : Button;
@@ -45,6 +49,8 @@ inobject
   var этап_ФизЛица              : logical;      var этап_ФизлицаНадпись         : string = 'Физлица';
   var этап_Сотрудники           : logical;      var этап_СотрудникиНадпись      : string = 'Сотрудники';
 
+  var этап_Начисления           : logical;      var этап_НачисленияНадпись      : string = 'Начисления';
+  var этап_Удержания            : logical;      var этап_УдержанияНадпись       : string = 'Удержания';
 
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
  proc ФормированиеТаблицыИф;
@@ -93,18 +99,29 @@ inobject
     --Доступность кнопок
     кнВыполнение2.Enabled       = (этап_Календари and
                                    этап_КБК and
-                                   этап_Звания and
+                                   --этап_Звания and
                                    этап_Должности and
-                                   этап_Квалификации and
-                                   этап_КвалСтавки and
-                                   этап_Разряды and
+                                   --этап_Квалификации and
+                                   --этап_КвалСтавки and
+                                   --этап_Разряды and
                                    этап_ТипыСтажа);
+    if not этап_ЗвИгнорировать then
+      кнВыполнение2.Enabled     = кнВыполнение2.Enabled and этап_Звания;
+    end;
     if not этап_ВЗвСтавкиИгнорировать then
       кнВыполнение2.Enabled     = кнВыполнение2.Enabled and этап_ВЗвСтавки;
     end;
     if not этап_СЗвСтавкиИгнорировать then
       кнВыполнение2.Enabled     = кнВыполнение2.Enabled and этап_СЗвСтавки;
     end;
+    if not этап_КвлИгнорировать then
+      кнВыполнение2.Enabled     = кнВыполнение2.Enabled and этап_Квалификации and этап_КвалСтавки;
+    end;
+    if not этап_РазрядыИгнорировать then
+      кнВыполнение2.Enabled     = кнВыполнение2.Enabled and этап_Разряды;
+    end;
+
+
     кнВыполнение3.Enabled       = (этап_Учреждние and этап_Бюджеты);
     кнВыполнение4.Enabled       = true;
     for k = 1..LengthOfArray(этап_ИмпортНач) do
@@ -183,7 +200,7 @@ inobject
       Template.Update;
     end;
     --справочники званий и ставок
-    if not этап_Звания then
+    if not этап_Звания and not этап_ЗвИгнорировать then
       locForm                   = Сервис.Импорт_Званий.Create;
       locForm.ShowEx(,Window.ModalWindow);
       этап_Звания               = Конвертация.Звания.ЗагруженоВсе;
@@ -207,18 +224,18 @@ inobject
       Template.Update;
     end;
     --справочники квалификаций и ставок
-    if not этап_Квалификации then
+    if not этап_Квалификации and not этап_КвлИгнорировать then
       locForm                   = Сервис.Импорт_Квалификаций.Create;
       locForm.ShowEx(,Window.ModalWindow);
       этап_Квалификации         = Конвертация.Квалификации.ЗагруженоВсе;
       Template.Update;
     end;
-    if этап_Квалификации and not этап_КвалСтавки then
+    if этап_Квалификации and not этап_КвлИгнорировать then
       Конвертация.СтавкиРолей.Выполнение(ТББ_Базовый.КонстантыРолей.рольКвалификация);
       этап_КвалСтавки           = Конвертация.СтавкиРолей.Загружено(ТББ_Базовый.КонстантыРолей.рольКвалификация);
       Template.Update;
     end;
-    if not этап_Разряды then
+    if not этап_Разряды and not этап_РазрядыИгнорировать  then
       locForm                   = Сервис.Импорт_Разрядов.Create;
       locForm.ShowEx(,Window.ModalWindow);
       этап_Разряды        = Конвертация.СтавкиРазрядов.ЗагруженоВсе;
@@ -226,9 +243,12 @@ inobject
     end;
     --стаж
     if not этап_ТипыСтажа then
+      try
       Конвертация.ТипыСтажа.Выполнение;
       этап_ТипыСтажа            = Конвертация.ТипыСтажа.ЗагруженыВсеТипыСтажа;
+      except
       Template.Update;
+      end;
     end;
 
 
@@ -263,11 +283,12 @@ inobject
       этап_Учреждние            = (CmOk=Конвертация.НашеУчреждение.Выполнение);
       Template.Update;
     end;
+    ИдентификацияУчреждения;
     if not этап_Бюджеты then
       этап_Бюджеты              = (CmOk=Конвертация.Бюджеты.Выполнение);                        
       Template.Update;
     end;
-    ИдентификацияУчреждения;
+    ПроверкаВыполнения;
   end;--proc кнВыполнение2ПриНажатии
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   proc кнВыполнение3ПриНажатии(Sender :Button);
@@ -324,7 +345,11 @@ inobject
   end;--proc кнВыполнение4ПриНажатии
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   proc кнВыполнение5ПриНажатии(Sender :Button);
+    Конвертация.ОперацииДок.Выполнение;
 
+    Конвертация.ОперацииНач.Выполнение;
+    этап_Начисления             = Конвертация.ОперацииНач.ЗагруженоВсе;
+    Template.Update;
   end;--proc кнВыполнение5ПриНажатии
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
 
@@ -338,7 +363,11 @@ inobject
 
 --~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~--
   func Поле_ПриВыводе(Cell :TemplateCell; Value :Variant;Action :Template.OutputTypes; var Format :String) :Variant;
-    if  not(Cell.Contents in ['этап_ВЗвСтавки','этап_СЗвСтавки']) then
+    if  not(Cell.Contents in ['этап_Звания','этап_ВЗвСтавки','этап_СЗвСтавки','этап_Квалификации','этап_КвалСтавки','этап_Разряды']) then
+      if    Value=true then     Result    = 'ь';
+      elsif Value=false then    Result    = 'ё';
+      end;
+    elsif Cell.Contents = 'этап_Звания' and not этап_ЗвИгнорировать then
       if    Value=true then     Result    = 'ь';
       elsif Value=false then    Result    = 'ё';
       end;
@@ -347,6 +376,18 @@ inobject
       elsif Value=false then    Result    = 'ё';
       end;
     elsif Cell.Contents = 'этап_СЗвСтавки' and not этап_СЗвСтавкиИгнорировать then
+      if    Value=true then     Result    = 'ь';
+      elsif Value=false then    Result    = 'ё';
+      end;
+    elsif Cell.Contents = 'этап_Квалификации' and not этап_КвлИгнорировать then
+      if    Value=true then     Result    = 'ь';
+      elsif Value=false then    Result    = 'ё';
+      end;
+    elsif Cell.Contents = 'этап_КвалСтавки' and not этап_КвлИгнорировать then
+      if    Value=true then     Result    = 'ь';
+      elsif Value=false then    Result    = 'ё';
+      end;
+    elsif Cell.Contents = 'этап_Разряды' and not этап_РазрядыИгнорировать then
       if    Value=true then     Result    = 'ь';
       elsif Value=false then    Result    = 'ё';
       end;
@@ -384,6 +425,10 @@ inobject
       end;
     end;--proc ПоказатьТаблицуСтавок
     --.........................................................................
+    proc СообщениеСбросьФлаг;
+      Message('Для открытия диалога настройки сбросьте флаг <Не выполнять>');
+    end;
+    --.........................................................................
     if Action=Template.ButtonPressed  then
       if    Cell.Contents='этап_КалендариНадпись' then
         locBlankForm                            = Сервис.Импорт_Календарей.Create;
@@ -395,29 +440,53 @@ inobject
         locBlankForm.ShowEx(,Window.ModalWindow);
         этап_КБК                                = Конвертация.КБК.ЗагруженоВсе;
         Template.Update;
-      elsif Cell.Contents='этап_ЗванияНадпись' then
-        locBlankForm                            = Сервис.Импорт_Званий.Create;
-        locBlankForm.ShowEx(,Window.ModalWindow);
-        этап_Звания                             = Конвертация.Звания.ЗагруженоВсе;
-        Template.Update;
-      elsif Cell.Contents='этап_ВЗвСтавкиНадпись' then
-        ПоказатьТаблицуСтавок(ТББ_Базовый.КонстантыРолей.рольВоинскЗвание);
+      elsif Cell.Contents='этап_ЗванияНадпись' and not этап_ЗвИгнорировать then
+        if  not этап_ЗвИгнорировать then
+          locBlankForm                          = Сервис.Импорт_Званий.Create;
+          locBlankForm.ShowEx(,Window.ModalWindow);
+          этап_Звания                           = Конвертация.Звания.ЗагруженоВсе;
+          Template.Update;
+        else
+          СообщениеСбросьФлаг;
+        end;
+      elsif Cell.Contents='этап_ВЗвСтавкиНадпись'then
+        if not этап_ВЗвСтавкиИгнорировать then
+          ПоказатьТаблицуСтавок(ТББ_Базовый.КонстантыРолей.рольВоинскЗвание);
+        else
+          СообщениеСбросьФлаг;
+        end;
       elsif Cell.Contents='этап_СЗвСтавкиНадпись' then
-        ПоказатьТаблицуСтавок(ТББ_Базовый.КонстантыРолей.рольСпецЗвание);
+        if not этап_СЗвСтавкиИгнорировать then
+         ПоказатьТаблицуСтавок(ТББ_Базовый.КонстантыРолей.рольСпецЗвание);
+        else
+          СообщениеСбросьФлаг;
+        end;
       elsif Cell.Contents='этап_ДолжностиНадпись' then
         locBlankForm                            = Сервис.Импорт_Должностей.Create;
         locBlankForm.ShowEx(,Window.ModalWindow);
         этап_Должности                          = Конвертация.Должности.ЗагруженоВсе;
         Template.Update;
       elsif Cell.Contents='этап_КвалификацииНадпись' then
-        locBlankForm                            = Сервис.Импорт_Квалификаций.Create;
-        locBlankForm.ShowEx(,Window.ModalWindow);
-        этап_Квалификации                       = Конвертация.Квалификации.ЗагруженоВсе;
-        Template.Update;
+        if not этап_КвлИгнорировать then
+          locBlankForm                          = Сервис.Импорт_Квалификаций.Create;
+          locBlankForm.ShowEx(,Window.ModalWindow);
+          этап_Квалификации                     = Конвертация.Квалификации.ЗагруженоВсе;
+          Template.Update;
+        else
+          СообщениеСбросьФлаг;
+        end;
       elsif Cell.Contents='этап_КвалСтавкиНадпись' then
-        ПоказатьТаблицуСтавок(ТББ_Базовый.КонстантыРолей.рольКвалификация);
+        if not этап_КвлИгнорировать then
+          ПоказатьТаблицуСтавок(ТББ_Базовый.КонстантыРолей.рольКвалификация);
+        else
+          СообщениеСбросьФлаг;
+        end;
       elsif Cell.Contents='этап_РазрядыНадпись' then
-        Сервис.Импорт_Разрядов.ShowFormEx(,Window.ModalWindow);
+        if not этап_РазрядыИгнорировать then
+          Сервис.Импорт_Разрядов.ShowFormEx(,Window.ModalWindow);
+        else
+          СообщениеСбросьФлаг;
+        end;
       elsif Cell.Contents='этап_ТипыСтажаНадпись' then
         Гарнец_ПерсоналБазовый.Справочники.картТипСтажа.ShowFormEx(,,Window.ModalWindow);
       elsif Cell.Contents='этап_СтавкиСтажаНадпись' then
@@ -431,10 +500,11 @@ inobject
           Message('Импорт описания учреждения не выполнен!');
         end;
       elsif Cell.Contents='этап_БюджетыНадпись' then
-        Бюджет_ЗПиДД.Справочники.картБюджеты.ShowFormEx(,,Window.ModalWindow);
-
-
-
+        if этап_Учреждние then
+          Бюджет_ЗПиДД.Справочники.картБюджеты.ShowFormEx(,,Window.ModalWindow);
+        else
+          Message('Импорт описания учреждения не выполнен!');
+        end;
       -----------------------------------------------------
       elsif Cell.Owner=секцИмпортНачислений then
         Index                                   = Cell.Frame as integer;

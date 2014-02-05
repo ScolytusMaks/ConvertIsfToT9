@@ -56,10 +56,10 @@ inobject private
       if Action<>Template.Clear then
         Result                          = (НомерОсновы[index]=0);
         locRecord                       = ВидРоли[Index];
-        if CmOk=ВыборРоли([4,5],'',locRecord,Window.ModalWindow) then
-          ВидРоли[Index]                = locRecord;
-          НомерОсновы[Index]            =0;
-        end;
+          if CmOk=ВыборРоли([4,5],'',locRecord,Window.ModalWindow) then
+            ВидРоли[Index]                = locRecord;
+            НомерОсновы[Index]            =0;
+          end;
         Return false;
       end;
     end;
